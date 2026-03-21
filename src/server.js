@@ -5,6 +5,7 @@ import configuration from './config/config.js';
 import errorHandler from './error/errorHandler.js';
 import loggerMiddleware from './validations/middleware/loggerMiddleware.js';
 import connectDB from './config/dbConfig.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 await connectDB();
 
@@ -13,6 +14,8 @@ app.use(cors(configuration.CORS));
 
 app.use(express.json());
 app.use(loggerMiddleware);
+
+app.use('/user/admin', adminRoutes);
 
 app.use(errorHandler);
 
