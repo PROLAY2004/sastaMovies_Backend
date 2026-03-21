@@ -1,6 +1,8 @@
 import nodemailer from 'nodemailer';
 import configuration from '../config/config.js';
-import otpTemplate from '../templates/otpTemplatre.js';
+import NotificationTemplate from '../templates/NotificationTemplate.js';
+
+const template = new NotificationTemplate();
 
 export default class SendEmailService {
   // Common mail sender
@@ -27,12 +29,12 @@ export default class SendEmailService {
     }
   };
 
-  otpMailer = async (email, otp, method) => {
+  activationMailer = async (name, email, startDate, expireDate) => {
     try {
       const mailResponse = await this.mailSender(
         email,
-        'Verification Email',
-        otpTemplate(otp, method)
+        'Account Activated',
+        template.activationTemplate(name, startDate, expireDate)
       );
 
       if (mailResponse instanceof Error) {

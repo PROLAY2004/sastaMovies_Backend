@@ -1,4 +1,9 @@
 import user from '../../models/userModel.js';
+import DateFormatter from '../../utils/DateFormatter.js';
+import SendEmailService from '../../services/sendMailService.js';
+
+const mailer = new SendEmailService();
+const format = new DateFormatter();
 
 export default class AuthController {
   signup = async (req, res, next) => {
@@ -16,6 +21,13 @@ export default class AuthController {
       validTill.setDate(validTill.getDate() + days);
       const newUser = new user({ name, email, validTill });
       await newUser.save();
+
+      mailer.activationMailer(
+        name,
+        email,
+        format.dateAndTimeTemplate(Date.now()),
+        format.dateTemplate(validTill)
+      );
 
       res.status(200).json({
         message: 'Invitation sent successfully.',
