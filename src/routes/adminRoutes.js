@@ -1,6 +1,6 @@
 import express from 'express';
 
-import AdminController from '../controller/AdminController.js';
+import AdminController from '../controller/admin/authController.js';
 import UserValidation from '../validations/middleware/UserValidation.js';
 
 const admin = new AdminController();
