@@ -27,7 +27,7 @@ export default class TokenValidation {
 
   isAdmin = async (req, res, next) => {
     try {
-      const decoded = verifyToken(req, configuration.ACCESS_SECRET);
+      const decoded = verifyToken(req, res, configuration.ACCESS_SECRET);
       const appUser = await user.findOne({ _id: decoded.userId });
 
       if (appUser) {
