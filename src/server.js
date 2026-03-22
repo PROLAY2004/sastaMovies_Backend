@@ -6,6 +6,7 @@ import errorHandler from './error/errorHandler.js';
 import loggerMiddleware from './validations/middleware/loggerMiddleware.js';
 import connectDB from './config/dbConfig.js';
 import adminRoutes from './routes/adminRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 import TokenValidation from './validations/middleware/TokenValidation.js';
 
 await connectDB();
@@ -19,6 +20,7 @@ app.use(express.json());
 app.use(loggerMiddleware);
 
 app.use('/user/admin', tokenValidator.isAdmin, adminRoutes);
+app.use('/user/auth', userRoutes);
 
 app.use(errorHandler);
 
