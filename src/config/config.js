@@ -13,6 +13,8 @@ const configuration = {
   REFRESH_SECRET: process.env.REFRESH_SECRET,
   ACCESS_EXPIRE: process.env.ACCESS_EXPIRE,
   REFRESH_EXPIRE: process.env.REFRESH_EXPIRE,
+  CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   CORS: {
     origin: `${process.env.FRONTEND_URL}`,
     methods: ['POST', 'GET'],
