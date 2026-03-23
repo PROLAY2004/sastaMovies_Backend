@@ -4,9 +4,9 @@ import { ValidationError } from 'yup';
 const schema = new UserSchema();
 
 export default class UserValidation {
-  signupRequest = async (req, res, next) => {
+  inviteRequest = async (req, res, next) => {
     try {
-      await schema.userSignupSchema.validate(req.body, {
+      await schema.inviteSchema.validate(req.body, {
         abortEarly: false, // return all validation errors
         stripUnknown: true, // remove unexpected fields
       });
