@@ -20,7 +20,7 @@ app.use(express.json());
 app.use(loggerMiddleware);
 
 app.use('/user/admin', tokenValidator.isAdmin, adminRoutes);
-app.use('/user/auth', userRoutes);
+app.use('/user', userRoutes);
 
 app.use(errorHandler);
 
