@@ -46,7 +46,7 @@ export default class TokenValidation {
         if (appUser.role !== 'admin') {
           res.status(403);
 
-          throw new Error('Not an Admin');
+          throw new Error('Access Denied. Admins only.');
         }
 
         req.user = appUser;
@@ -54,7 +54,7 @@ export default class TokenValidation {
         next();
       } else {
         res.status(404);
-        throw new Error('User doesnot exists');
+        throw new Error('User does not exist.');
       }
     } catch (err) {
       if (err.message == 'jwt expired') {
@@ -76,7 +76,7 @@ export default class TokenValidation {
   //         next();
   //       } else {
   //         res.status(401);
-  //         throw new Error('User doesnot exists');
+  //         throw new Error('User does not exist.');
   //       }
   //     } catch (err) {
   //       if (err.message == 'jwt expired') {

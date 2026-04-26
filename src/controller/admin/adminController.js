@@ -5,7 +5,7 @@ import SendEmailService from '../../services/sendMailService.js';
 const mailer = new SendEmailService();
 const format = new DateFormatter();
 
-export default class AuthController {
+export default class AdminController {
   invite = async (req, res, next) => {
     try {
       const { name, email, days } = req.body;

@@ -16,7 +16,7 @@ const configuration = {
   CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   CORS: {
-    origin: `${process.env.FRONTEND_URL}`,
+    origin: [process.env.FRONTEND_URL, process.env.ADMIN_URL],
     methods: ['POST', 'GET'],
   },
 };

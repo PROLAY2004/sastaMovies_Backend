@@ -28,7 +28,7 @@ export default class AuthController {
 
       const expiryTime = new Date(isUser.validTill);
 
-      if (now > expiryTime) {
+      if (now > expiryTime && isUser.role !== 'admin') {
         res.status(400);
         throw new Error('User subscription expired.');
       }
@@ -118,7 +118,7 @@ export default class AuthController {
 
       const expiryTime = new Date(userinfo.validTill);
 
-      if (now > expiryTime) {
+      if (now > expiryTime && userinfo.role !== 'admin') {
         res.status(400);
         throw new Error('User subscription expired.');
       }
