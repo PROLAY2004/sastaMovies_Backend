@@ -8,11 +8,21 @@ import oauth2Client from '../../utils/googleClient.js';
 export default class AuthController {
   signin = async (req, res, next) => {
     try {
-      const userInfo = req.user;
-
       if (!req.body.email) {
         res.status(400);
         throw new Error('Enter your email to continue.');
+      }
+
+      const isUser = await user.findOne({ email: req.body.email });
+
+      if (!isUser) {
+        res.status(400);
+        throw new Error('User does not exists.');
+      }
+
+      if (isUser.role !== 'admin') {
+        res.status(400);
+        throw new Error('Access Denied. Admin only.');
       }
 
       await otpGenerator(res, req.body.email);
@@ -72,7 +82,6 @@ export default class AuthController {
 
   google = async (req, res, next) => {
     try {
-      const userinfo = req.user;
       const googleCode = req.query.code;
 
       if (!googleCode) {
@@ -86,6 +95,17 @@ export default class AuthController {
       const userResponse = await axios.get(
         `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleResponse.tokens.access_token}`
       );
+      const userinfo = await user.findOne({ email: userResponse.data.email });
+
+      if (!userinfo) {
+        res.status(404);
+        throw new Error('User does not exists');
+      }
+
+      if (userinfo.role !== 'admin') {
+        res.status(400);
+        throw new Error('Access Denied. Admin only.');
+      }
 
       const tokens = await genAuthToken(userinfo._id);
 

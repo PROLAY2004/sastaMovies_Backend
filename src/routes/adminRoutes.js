@@ -10,8 +10,5 @@ const validation = new UserValidation();
 const router = express.Router();
 
 router.post('/invite', validation.inviteRequest, admin.invite); // take name, email, number_of_days
-router.post('/auth/signin', auth.signin); //  email in body
-router.post('/auth/signin/:email', auth.verify); //  otp in body and email in params
-router.get('/auth/google', auth.google); // take code in query
 
 export default router;
