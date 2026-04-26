@@ -1,7 +1,10 @@
-import otpStyles from '../styles/otpStyles.js';
+import OtpStyles from '../styles/OtpStyles.js';
 
-export default function otpTemplate(otp) {
-  return `<!DOCTYPE html>
+const otpStyle = new OtpStyles();
+
+export default class OtpTemplate {
+  otpTemplate = (otp) => {
+    return `<!DOCTYPE html>
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
@@ -9,7 +12,7 @@ export default function otpTemplate(otp) {
                 <title>Sasta Movies OTP</title>
 
                 <style>
-                    ${otpStyles()}
+                    ${otpStyle.otpStyles()}
                 </style>
             </head>
 
@@ -55,4 +58,52 @@ export default function otpTemplate(otp) {
                 </div>
             </body>
         </html>`;
+  };
+
+  adminOtpTemplate = (otp) => {
+    return `<!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Admin OTP for Sasta Movies</title>
+                <style>
+                    ${otpStyle.adminOtpStyles()}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <div class="logo">
+                            <span class="logo-accent">Sasta</span>Movies
+                        </div>
+                    </div>
+                    
+                    <div class="content">
+                        <h1>One-Time Password (OTP)</h1>
+                        <p>Hello Admin,</p>
+                        <p>We received a request to authenticate your account. Please use the following OTP to verify your identity:</p>
+                        
+                        <div class="otp-container">
+                            <p>Your admin verification code is:</p>
+                            <div class="otp-code">${otp}</div>
+                            <p>This code will expire in 10 minutes.</p>
+                        </div>
+                        
+                        <p>If you didn't request this OTP, please ignore this email or contact our support team immediately.</p>
+                        
+                        <div class="divider"></div>
+                        
+                        <p>For security reasons, please don't share this OTP with anyone.</p>
+                        
+                    
+                    </div>
+                    
+                    <div class="footer">
+                        <p>&copy; 2026 Sasta Movies. All rights reserved.</p>
+                    </div>
+                </div>
+            </body>
+            </html>`;
+  };
 }

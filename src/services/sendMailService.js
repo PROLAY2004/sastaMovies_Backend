@@ -1,10 +1,10 @@
 import nodemailer from 'nodemailer';
 import configuration from '../config/config.js';
-import otpTemplate from '../templates/otpTemplate.js';
+import OtpTemplate from '../templates/OtpTemplate.js';
 import NotificationTemplate from '../templates/NotificationTemplate.js';
 
 const template = new NotificationTemplate();
-
+const otpTemplate = new OtpTemplate();
 export default class SendEmailService {
   // Common mail sender
   mailSender = async (email, title, body) => {
@@ -46,13 +46,23 @@ export default class SendEmailService {
     }
   };
 
-  otpMailer = async (email, otp) => {
+  otpMailer = async (email, otp, userType) => {
     try {
-      const mailResponse = await this.mailSender(
-        email,
-        'Verification Email',
-        otpTemplate(otp)
-      );
+      let mailResponse;
+
+      if (userType === 'admin') {
+        mailResponse = await this.mailSender(
+          email,
+          'Verification Email',
+          otpTemplate.adminOtpTemplate(otp)
+        );
+      } else {
+        mailResponse = await this.mailSender(
+          email,
+          'Verification Email',
+          otpTemplate.otpTemplate(otp)
+        );
+      }
 
       if (mailResponse instanceof Error) {
         throw mailResponse;

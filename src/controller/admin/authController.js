@@ -25,7 +25,7 @@ export default class AuthController {
         throw new Error('Access Denied. Admin only.');
       }
 
-      await otpGenerator(res, req.body.email);
+      await otpGenerator(res, req.body.email, 'admin');
 
       res.status(200).json({
         message: 'OTP successfully sent to email.',
