@@ -1,4 +1,6 @@
 import jwt from 'jsonwebtoken';
+
+import user from '../models/userModel.js';
 import configuration from '../config/config.js';
 
 const genAuthToken = async (userId) => {
@@ -9,6 +11,8 @@ const genAuthToken = async (userId) => {
     const refresh_token = jwt.sign({ userId }, configuration.REFRESH_SECRET, {
       expiresIn: configuration.REFRESH_EXPIRE,
     });
+
+    await user.findByIdAndUpdate(userId, { lastLogin: Date.now() });
 
     return {
       access_token,

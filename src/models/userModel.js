@@ -30,6 +30,11 @@ const usrSchema = new mongoose.Schema(
       default: false,
     },
 
+    lastLogin: {
+      type: Date,
+      required: true,
+    },
+
     savedContents: {
       type: [String],
       required: true,
