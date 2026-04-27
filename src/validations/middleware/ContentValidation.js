@@ -1,12 +1,12 @@
-import UserSchema from '../schema/UserSchema.js';
 import { ValidationError } from 'yup';
+import ContentSchema from '../schema/ContentSchema.js';
 
-const schema = new UserSchema();
+const schema = new ContentSchema();
 
-export default class UserValidation {
-  inviteRequest = async (req, res, next) => {
+export default class ContentValidation {
+  addMovieRequest = async (req, res, next) => {
     try {
-      await schema.inviteSchema.validate(req.body, {
+      await schema.movieSchema.validate(req.body, {
         abortEarly: false, // return all validation errors
         stripUnknown: true, // remove unexpected fields
       });
