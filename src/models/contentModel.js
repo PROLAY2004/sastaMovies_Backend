@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const contentSchema = new mongoose.Schema(
   {
-    imdbUrl: {
+    imdbId: {
       type: String,
       required: true,
     },
@@ -17,8 +17,8 @@ const contentSchema = new mongoose.Schema(
       required: true,
     },
 
-    year: {
-      type: Number,
+    release: {
+      type: String,
       required: true,
     },
 
@@ -38,11 +38,11 @@ const contentSchema = new mongoose.Schema(
     },
 
     posterUrl: {
-      16_9: {
+      horizontal: {
         type: String,
         required: true,
       },
-      9_16: {
+      vertical: {
         type: String,
         required: true,
       },
@@ -62,8 +62,6 @@ const contentSchema = new mongoose.Schema(
 
     subtitleUrl: {
       type: String,
-      required: true,
-      default: '',
     },
 
     contentIds: {

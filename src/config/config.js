@@ -15,6 +15,7 @@ const configuration = {
   REFRESH_EXPIRE: process.env.REFRESH_EXPIRE,
   CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+  IMDB_API_KEY: process.env.IMDB_API_KEY,
   CORS: {
     origin: [process.env.FRONTEND_URL, process.env.ADMIN_URL],
     methods: ['POST', 'GET'],

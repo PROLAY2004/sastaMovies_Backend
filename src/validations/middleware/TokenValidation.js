@@ -58,7 +58,7 @@ export default class TokenValidation {
       }
     } catch (err) {
       if (err.message == 'jwt expired') {
-        res.status(401);
+        res.status(403);
       }
 
       next(err);

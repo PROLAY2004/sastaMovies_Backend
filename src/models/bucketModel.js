@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const bucketSchema = new mongoose.Schema(
   {
-    imdbUrl: {
+    imdbId: {
       type: String,
       required: true,
     },
