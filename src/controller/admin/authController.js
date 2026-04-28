@@ -121,4 +121,28 @@ export default class AuthController {
       next(err);
     }
   };
+
+  refresh = async (req, res, next) => {
+    try {
+      const userInfo = req.user;
+
+      if(userInfo.role !== 'admin') {
+        res.status(400);
+        throw new Error('Access Denied. Admin only.');
+      }
+      
+      const tokens = await genAuthToken(userInfo._id);
+
+      res.status(200).json({
+        message: 'Refresh Token successfully generated.',
+        success: true,
+        data: {
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
 }

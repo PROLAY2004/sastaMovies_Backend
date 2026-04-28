@@ -57,13 +57,22 @@ export default class AdminController {
       const imdbId = imdbLink.split('/title/')[1].split('/')[0];
       const imdbApi = `https://www.omdbapi.com/?i=${imdbId}&apikey=${configuration.IMDB_API_KEY}`;
       const response = await axios.get(imdbApi);
+      const isExists = await content.findOne({ imdbId });
+
+      if (isExists) {
+        res.status(400);
+        throw new Error('Movie already exists.');
+      }
+      
       const bucketInstance = await bucket.create({
         imdbId,
         baseUrl,
         chunkCount: totalChunks,
         size_kb: totalSize,
-        mimeType,
+        mimeType : mimeType.toLowerCase(),
       });
+
+      
 
       await content.create({
         imdbId,

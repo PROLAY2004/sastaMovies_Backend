@@ -5,7 +5,7 @@ import verifyToken from '../../utils/tokenVerifier.js';
 export default class TokenValidation {
   accessTokenValidator = async (req, res, next) => {
     try {
-      const decoded = verifyToken(req, configuration.ACCESS_SECRET);
+      const decoded = verifyToken(req, res, configuration.ACCESS_SECRET);
       const appUser = await user.findOne({ _id: decoded.userId });
 
       if (!appUser) {
@@ -58,32 +58,32 @@ export default class TokenValidation {
       }
     } catch (err) {
       if (err.message == 'jwt expired') {
-        res.status(403);
+        res.status(401);
       }
 
       next(err);
     }
   };
 
-  //   refreshTokenValidator = async (req, res, next) => {
-  //     try {
-  //       const decoded = verifyToken(req, configuration.REFRESH_SECRET);
-  //       const appUser = await user.findOne({ _id: decoded.userId });
+  refreshTokenValidator = async (req, res, next) => {
+    try {
+      const decoded = verifyToken(req, res, configuration.REFRESH_SECRET);
+      const appUser = await user.findOne({ _id: decoded.userId });
 
-  //       if (appUser) {
-  //         req.user = appUser;
+      if (appUser) {
+        req.user = appUser;
 
-  //         next();
-  //       } else {
-  //         res.status(401);
-  //         throw new Error('User does not exist.');
-  //       }
-  //     } catch (err) {
-  //       if (err.message == 'jwt expired') {
-  //         res.status(401);
-  //       }
+        next();
+      } else {
+        res.status(401);
+        throw new Error('User does not exist.');
+      }
+    } catch (err) {
+      if (err.message == 'jwt expired') {
+        res.status(401);
+      }
 
-  //       next(err);
-  //     }
-  //   };
+      next(err);
+    }
+  };
 }

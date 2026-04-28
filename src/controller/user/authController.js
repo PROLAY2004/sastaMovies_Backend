@@ -104,29 +104,47 @@ export default class AuthController {
       const userResponse = await axios.get(
         `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleResponse.tokens.access_token}`
       );
-      const userinfo = await user.findOne({ email: userResponse.data.email });
+      const userInfo = await user.findOne({ email: userResponse.data.email });
 
-      if (!userinfo) {
+      if (!userInfo) {
         res.status(404);
         throw new Error('User does not exists');
       }
 
-      if (userinfo.isBlocked) {
+      if (userInfo.isBlocked) {
         res.status(400);
         throw new Error('User Blocked By admin');
       }
 
-      const expiryTime = new Date(userinfo.validTill);
+      const expiryTime = new Date(userInfo.validTill);
 
-      if (now > expiryTime && userinfo.role !== 'admin') {
+      if (now > expiryTime && userInfo.role !== 'admin') {
         res.status(400);
         throw new Error('User subscription expired.');
       }
 
-      const tokens = await genAuthToken(userinfo._id);
+      const tokens = await genAuthToken(userInfo._id);
 
       res.status(200).json({
         message: 'Google login successful.',
+        success: true,
+        data: {
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  refresh = async (req, res, next) => {
+    try {
+      const userInfo = req.user;
+      const tokens = await genAuthToken(userInfo._id);
+
+      res.status(200).json({
+        message: 'Refresh Token successfully generated.',
         success: true,
         data: {
           access_token: tokens.access_token,
