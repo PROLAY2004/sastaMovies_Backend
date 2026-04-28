@@ -37,6 +37,11 @@ const contentSchema = new mongoose.Schema(
       required: true,
     },
 
+    genre: {
+      type: [String],
+      required: true,
+    },
+
     posterUrl: {
       horizontal: {
         type: String,

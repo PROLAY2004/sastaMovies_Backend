@@ -63,16 +63,14 @@ export default class AdminController {
         res.status(400);
         throw new Error('Movie already exists.');
       }
-      
+
       const bucketInstance = await bucket.create({
         imdbId,
         baseUrl,
         chunkCount: totalChunks,
         size_kb: totalSize,
-        mimeType : mimeType.toLowerCase(),
+        mimeType: mimeType.toLowerCase(),
       });
-
-      
 
       await content.create({
         imdbId,
@@ -82,6 +80,7 @@ export default class AdminController {
         cast: response.data.Actors.split(', '),
         runtime: response.data.Runtime,
         rating: parseFloat(response.data.imdbRating),
+        genre: response.data.Genre.split(', '),
         posterUrl: {
           horizontal: posterLink,
           vertical: response.data.Poster,
@@ -94,6 +93,32 @@ export default class AdminController {
       res.status(200).json({
         message: 'Movie added successfully.',
         success: true,
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  fetchMovie = async (req, res, next) => {
+    try {
+      const movies = await content.find({contentType: 'movie', isDeleted: false}).lean();
+      const allGenres = [...new Set(movies.map(movie => movie.genre).flat())];
+      const allYears = [
+        ...new Set(
+          movies
+            .filter((m) => m.release) // Ensure release exists
+            .map((m) => new Date(m.release).getFullYear())
+        ),
+      ];
+
+      res.status(200).json({
+        message: 'Movie details fetched successfully.',
+        success: true,
+        data:{
+          movies,
+          allGenres,
+          allYears
+        }
       });
     } catch (err) {
       next(err);

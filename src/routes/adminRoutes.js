@@ -13,5 +13,5 @@ const router = express.Router();
 
 router.post('/invite', userValidation.inviteRequest, admin.invite); // take name, email, number_of_days
 router.post('/movie', contentValidation.addMovieRequest, admin.addMovie); // take imdb, description, poster_link, base_url, total_chunks, total_size, mime_type
-
+router.post('/fetch-movie', admin.fetchMovie); // search query, filter data, pagination data
 export default router;
