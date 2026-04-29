@@ -1,11 +1,9 @@
-import axios from 'axios';
-
 import user from '../../models/userModel.js';
 import content from '../../models/contentModel.js';
 import bucket from '../../models/bucketModel.js';
 import DateFormatter from '../../utils/DateFormatter.js';
 import SendEmailService from '../../services/sendMailService.js';
-import configuration from '../../config/config.js';
+import fetchMovie from '../../utils/fetchMovieDetails.js';
 
 const mailer = new SendEmailService();
 const format = new DateFormatter();
@@ -45,19 +43,11 @@ export default class AdminController {
 
   addMovie = async (req, res, next) => {
     try {
-      const {
-        imdbLink,
-        posterLink,
-        baseUrl,
-        totalChunks,
-        totalSize,
-        mimeType,
-        subtitleLink,
-      } = req.body;
-      const imdbId = imdbLink.split('/title/')[1].split('/')[0];
-      const imdbApi = `https://www.omdbapi.com/?i=${imdbId}&apikey=${configuration.IMDB_API_KEY}`;
-      const response = await axios.get(imdbApi);
-      const isExists = await content.findOne({ imdbId, isDeleted: false });
+      const response = await fetchMovie(req.body.imdbLink);
+      const isExists = await content.findOne({
+        imdbId: response.imdbId,
+        isDeleted: false,
+      });
 
       if (isExists) {
         res.status(400);
@@ -65,28 +55,28 @@ export default class AdminController {
       }
 
       const bucketInstance = await bucket.create({
-        imdbId,
-        baseUrl,
-        chunkCount: totalChunks,
-        size_kb: totalSize,
-        mimeType: mimeType.toLowerCase(),
+        imdbId: response.imdbId,
+        baseUrl: req.body.baseUrl,
+        chunkCount: req.body.totalChunks,
+        size_kb: req.body.totalSize,
+        mimeType: req.body.mimeType.toLowerCase(),
       });
 
       await content.create({
-        imdbId,
-        title: response.data.Title,
-        description: response.data.Plot,
-        release: response.data.Released,
-        cast: response.data.Actors.split(', '),
-        runtime: response.data.Runtime,
-        rating: parseFloat(response.data.imdbRating),
-        genre: response.data.Genre.split(', '),
+        imdbId : response.imdbId,
+        title: response.movieData.data.Title,
+        description: response.movieData.data.Plot,
+        release: response.movieData.data.Released,
+        cast: response.movieData.data.Actors.split(', '),
+        runtime: response.movieData.data.Runtime,
+        rating: parseFloat(response.movieData.data.imdbRating),
+        genre: response.movieData.data.Genre.split(', '),
         posterUrl: {
-          horizontal: posterLink,
-          vertical: response.data.Poster,
+          horizontal: req.body.posterLink,
+          vertical: response.movieData.data.Poster,
         },
         contentType: 'movie',
-        subtitleUrl: subtitleLink,
+        subtitleUrl: req.body.subtitleLink,
         contentIds: [bucketInstance._id],
       });
 
@@ -170,6 +160,88 @@ export default class AdminController {
           currentPage: parseInt(page),
           totalMovies: totalCount,
         },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  editMovie = async (req, res, next) => {
+    try {
+      const response = await fetchMovie(req.body.imdbLink);
+      const isExists = await content.findOne({
+        imdbId: response.imdbId,
+        _id: { $ne: req.body.contentId }, // Exclude the current movie being edited
+        isDeleted: false,
+      });
+
+      if (isExists) {
+        res.status(400);
+        throw new Error('Another movie with this IMDB ID already exists.');
+      }
+
+      const updatedContent = await content.findByIdAndUpdate(
+        {_id : req.body.contentId},
+        {
+          imdbId: response.imdbId,
+          title: response.movieData.data.Title,
+          description: response.movieData.data.Plot,
+          release: response.movieData.data.Released,
+          cast: response.movieData.data.Actors.split(', '),
+          runtime: response.movieData.data.Runtime,
+          rating: parseFloat(response.movieData.data.imdbRating),
+          genre: response.movieData.data.Genre.split(', '),
+          posterUrl: {
+            horizontal: req.body.posterLink,
+            vertical: response.movieData.data.Poster,
+          },
+          subtitleUrl: req.body.subtitleLink,
+        },
+        { new: true } // Returns the updated document
+      );
+
+      // Safety check in case the contentId passed doesn't exist
+      if (!updatedContent) {
+        res.status(404);
+        throw new Error('Movie not found.');
+      }
+
+      await bucket.findByIdAndUpdate(
+        { _id: updatedContent.contentIds[0] },
+        {
+          imdbId: response.imdbId,
+          baseUrl: req.body.baseUrl,
+          chunkCount: req.body.totalChunks,
+          size_kb: req.body.totalSize,
+          mimeType: req.body.mimeType.toLowerCase(),
+        }
+      );
+
+      res.status(200).json({
+        message: 'Movie updated successfully.',
+        success: true,
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  deleteMovie = async (req, res, next) => {
+    try {
+      const updatedContent = await content.findOneAndUpdate(
+        { _id: req.body.contentId },
+        { $set: { isDeleted: true } },
+        { new: true } // Returns the modified document
+      );
+
+      if (!updatedContent) {
+        res.status(400);
+        throw new Error('Content not available or deleted.');
+      }
+
+      res.status(200).json({
+        message: 'Movie deleted successfully',
+        success: true,
       });
     } catch (err) {
       next(err);
