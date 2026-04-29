@@ -20,7 +20,8 @@ export default class AdminController {
         }),
         content
           .find({ isDeleted: false })
-          .sort({ createdAt: -1 }) // Use .sort() for Mongoose queries
+          .sort({ createdAt: -1 })
+          .limit(4)
           .lean(), // Converts heavy Mongoose docs to fast, plain JS objects
         content.countDocuments({
           isDeleted: false,
