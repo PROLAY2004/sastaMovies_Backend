@@ -65,12 +65,8 @@ const contentSchema = new mongoose.Schema(
       default: false,
     },
 
-    subtitleUrl: {
-      type: String,
-    },
-
     contentIds: {
-      type: [String],
+      type: [[String]],
       required: true,
     },
   },

@@ -97,7 +97,8 @@ export default class AdminController {
         imdbId: response.imdbId,
         baseUrl: req.body.baseUrl,
         chunkCount: req.body.totalChunks,
-        size_kb: req.body.totalSize,
+        size_byte: req.body.totalSize,
+        subtitleUrl: req.body.subtitleLink,
         mimeType: req.body.mimeType.toLowerCase(),
       });
 
@@ -115,8 +116,7 @@ export default class AdminController {
           vertical: response.movieData.data.Poster,
         },
         contentType: 'movie',
-        subtitleUrl: req.body.subtitleLink,
-        contentIds: [bucketInstance._id],
+        contentIds: [[bucketInstance._id]],
       });
 
       res.status(200).json({
@@ -177,7 +177,7 @@ export default class AdminController {
       ]);
 
       const bucketIds = movies
-        .map((movie) => movie.contentIds && movie.contentIds[0])
+        .map((movie) => movie.contentIds?.[0]?.[0])
         .filter((id) => id); // Filter out any undefined/null values
 
       // Fetch all corresponding buckets in one go
@@ -192,15 +192,15 @@ export default class AdminController {
 
       // Merge both objects: movie = {...bucketData, ...movieData}
       const mergedMovies = movies.map((movie) => {
-        const targetBucketId =
-          movie.contentIds && movie.contentIds[0]
-            ? movie.contentIds[0].toString()
-            : null;
+        const targetBucketId = movie.contentIds?.[0]?.[0]
+          ? movie.contentIds[0][0].toString()
+          : null;
         const bucketData = targetBucketId ? bucketMap[targetBucketId] : {};
 
         return {
           ...bucketData, // Spreads bucket fields
           ...movie, // Spreads movie fields (movie fields will override bucket fields if there's a conflict, like _id)
+          subtitleUrl: bucketData.subtitleUrl || movie.subtitleUrl || '',
         };
       });
 
@@ -262,7 +262,6 @@ export default class AdminController {
             horizontal: req.body.posterLink,
             vertical: response.movieData.data.Poster,
           },
-          subtitleUrl: req.body.subtitleLink,
         },
         { new: true } // Returns the updated document
       );
@@ -279,7 +278,8 @@ export default class AdminController {
           imdbId: response.imdbId,
           baseUrl: req.body.baseUrl,
           chunkCount: req.body.totalChunks,
-          size_kb: req.body.totalSize,
+          size_byte: req.body.totalSize,
+          subtitleUrl: req.body.subtitleLink,
           mimeType: req.body.mimeType.toLowerCase(),
         }
       );

@@ -17,7 +17,7 @@ const bucketSchema = new mongoose.Schema(
       required: true,
     },
 
-    size_kb: {
+    size_byte: {
       type: Number,
       required: true,
     },
@@ -26,6 +26,10 @@ const bucketSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: ['mp4', 'mkv', 'webm', 'mov', 'avi'],
+    },
+
+    subtitleUrl: {
+      type: String,
     },
   },
   {
