@@ -9,6 +9,44 @@ const mailer = new SendEmailService();
 const format = new DateFormatter();
 
 export default class AdminController {
+  dashboard = async (req, res, next) => {
+    try {
+      // Run all independent database queries in parallel for maximum speed
+      const [userCount, contents, movieCount, seriesCount] = await Promise.all([
+        user.countDocuments({
+          isBlocked: false,
+          validTill: { $gt: Date.now() },
+          role: 'user',
+        }),
+        content
+          .find({ isDeleted: false })
+          .sort({ createdAt: -1 }) // Use .sort() for Mongoose queries
+          .lean(), // Converts heavy Mongoose docs to fast, plain JS objects
+        content.countDocuments({
+          isDeleted: false,
+          contentType: 'movie',
+        }),
+        content.countDocuments({
+          isDeleted: false,
+          contentType: 'series',
+        }),
+      ]);
+
+      res.status(200).json({
+        message: 'Dashboard data fetched successfully.',
+        success: true,
+        data: {
+          contents,
+          userCount,
+          movieCount,
+          seriesCount,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
   invite = async (req, res, next) => {
     try {
       const { name, email, days } = req.body;
@@ -63,7 +101,7 @@ export default class AdminController {
       });
 
       await content.create({
-        imdbId : response.imdbId,
+        imdbId: response.imdbId,
         title: response.movieData.data.Title,
         description: response.movieData.data.Plot,
         release: response.movieData.data.Released,
@@ -209,7 +247,7 @@ export default class AdminController {
       }
 
       const updatedContent = await content.findByIdAndUpdate(
-        {_id : req.body.contentId},
+        { _id: req.body.contentId },
         {
           imdbId: response.imdbId,
           title: response.movieData.data.Title,
@@ -256,9 +294,9 @@ export default class AdminController {
 
   deleteMovie = async (req, res, next) => {
     try {
-      if(!req.body.contentId){
+      if (!req.body.contentId) {
         res.status(400);
-        throw new Error("ContentId is Required");
+        throw new Error('ContentId is Required');
       }
 
       const updatedContent = await content.findOneAndUpdate(
