@@ -5,8 +5,21 @@ export default class ContentSchema {
     imdbLink: yup.string().required('Please enter the IMDb link.'),
     posterLink: yup.string().required('Please enter the poster link.'),
     baseUrl: yup.string().required('Please enter the base URL.'),
-    totalChunks: yup.number().required('Please enter the chunk count.'),
-    totalSize: yup.number().required('Please enter the total size.'),
+    totalChunks: yup
+      .number()
+      .transform((value, originalValue) =>
+        originalValue === '' ? undefined : value
+      )
+      .typeError('Total chunks must be a number')
+      .required('Please enter the chunk count.'),
+
+    totalSize: yup
+      .number()
+      .transform((value, originalValue) =>
+        originalValue === '' ? undefined : value
+      )
+      .typeError('Total size must be a number')
+      .required('Please enter total size'),
     mimeType: yup.string().required('Please enter the MIME type.'),
   });
 
@@ -15,8 +28,21 @@ export default class ContentSchema {
     imdbLink: yup.string().required('Please enter the IMDb link.'),
     posterLink: yup.string().required('Please enter the poster link.'),
     baseUrl: yup.string().required('Please enter the base URL.'),
-    totalChunks: yup.number().required('Please enter the chunk count.'),
-    totalSize: yup.number().required('Please enter the total size.'),
+    totalChunks: yup
+      .number()
+      .transform((value, originalValue) =>
+        originalValue === '' ? undefined : value
+      )
+      .typeError('Total chunks must be a number')
+      .required('Please enter the chunk count.'),
+
+    totalSize: yup
+      .number()
+      .transform((value, originalValue) =>
+        originalValue === '' ? undefined : value
+      )
+      .typeError('Total size must be a number')
+      .required('Please enter total size'),
     mimeType: yup.string().required('Please enter the MIME type.'),
   });
 }

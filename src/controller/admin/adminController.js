@@ -137,6 +137,34 @@ export default class AdminController {
           .lean(), // Get dates to extract years
       ]);
 
+      const bucketIds = movies
+        .map((movie) => movie.contentIds && movie.contentIds[0])
+        .filter((id) => id); // Filter out any undefined/null values
+
+      // Fetch all corresponding buckets in one go
+      // (Make sure your bucket model is imported at the top, e.g., const Bucket = require('../models/Bucket');)
+      const buckets = await bucket.find({ _id: { $in: bucketIds } }).lean();
+
+      // Create a dictionary map for fast lookup by bucket _id
+      const bucketMap = buckets.reduce((acc, bucket) => {
+        acc[bucket._id.toString()] = bucket;
+        return acc;
+      }, {});
+
+      // Merge both objects: movie = {...bucketData, ...movieData}
+      const mergedMovies = movies.map((movie) => {
+        const targetBucketId =
+          movie.contentIds && movie.contentIds[0]
+            ? movie.contentIds[0].toString()
+            : null;
+        const bucketData = targetBucketId ? bucketMap[targetBucketId] : {};
+
+        return {
+          ...bucketData, // Spreads bucket fields
+          ...movie, // Spreads movie fields (movie fields will override bucket fields if there's a conflict, like _id)
+        };
+      });
+
       // 6. Format unique years for the dropdown
       const allYears = [
         ...new Set(
@@ -153,7 +181,7 @@ export default class AdminController {
         message: 'Movie details fetched successfully.',
         success: true,
         data: {
-          movies,
+          movies: mergedMovies,
           allGenres,
           allYears,
           totalPages: Math.ceil(totalCount / parseInt(limit)) || 1,
