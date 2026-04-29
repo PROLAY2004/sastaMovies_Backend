@@ -18,7 +18,7 @@ const configuration = {
   IMDB_API_KEY: process.env.IMDB_API_KEY,
   CORS: {
     origin: [process.env.FRONTEND_URL, process.env.ADMIN_URL],
-    methods: ['POST', 'GET'],
+    methods: ['POST', 'GET', 'PUT', 'DELETE'],
   },
 };
 

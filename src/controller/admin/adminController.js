@@ -256,6 +256,11 @@ export default class AdminController {
 
   deleteMovie = async (req, res, next) => {
     try {
+      if(!req.body.contentId){
+        res.status(400);
+        throw new Error("ContentId is Required");
+      }
+
       const updatedContent = await content.findOneAndUpdate(
         { _id: req.body.contentId },
         { $set: { isDeleted: true } },
