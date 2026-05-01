@@ -108,4 +108,8 @@ export default class ContentSchema {
       .of(this.seasonSchema)
       .min(1, 'Add at least one season'),
   });
+
+  editSeriesSchema = this.addSeriesSchema.shape({
+    contentId: yup.string().required('Please enter the contentId.'),
+  });
 }

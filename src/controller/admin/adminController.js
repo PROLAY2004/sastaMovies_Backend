@@ -33,7 +33,6 @@ export default class AdminController {
           contentType: 'series',
         }),
       ]);
-      
 
       res.status(200).json({
         message: 'Dashboard data fetched successfully.',
@@ -391,6 +390,225 @@ export default class AdminController {
 
       res.status(200).json({
         message: 'Series added successfully.',
+        success: true,
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  // fetchSeries Controller
+  fetchSeries = async (req, res, next) => {
+    try {
+      // 1. Extract query elements from req.body with default fallbacks
+      const {
+        search = '',
+        genre = 'all',
+        year = 'all',
+        page = 1,
+        limit = 5,
+      } = req.body;
+
+      const query = { contentType: 'series', isDeleted: false };
+
+      // 2. Apply Search Filter (Case-insensitive)
+      if (search) {
+        const safeSearch = this.escapeRegex(search);
+        query.title = { $regex: safeSearch, $options: 'i' };
+      }
+
+      // 3. Apply Genre Filter
+      if (genre && genre !== 'all') {
+        query.genre = genre;
+      }
+
+      // 4. Apply Year Filter
+      if (year && year !== 'all') {
+        query.release = { $regex: year.toString(), $options: 'i' };
+      }
+
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+
+      // 5. Run queries in parallel
+      const [seriesData, totalCount, rawGenres, releaseDates] =
+        await Promise.all([
+          content
+            .find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit))
+            .lean(),
+          content.countDocuments(query),
+          content.distinct('genre', {
+            contentType: 'series',
+            isDeleted: false,
+          }),
+          content
+            .find({ contentType: 'series', isDeleted: false })
+            .select('release')
+            .lean(),
+        ]);
+
+      const bucketIds = seriesData
+        .map((seriesItem) => seriesItem.contentIds?.[0]?.[0])
+        .filter((id) => id);
+
+      // Fetch corresponding buckets
+      const buckets = await bucket.find({ _id: { $in: bucketIds } }).lean();
+
+      // Dictionary map for fast lookup
+      const bucketMap = buckets.reduce((acc, bucketItem) => {
+        acc[bucketItem._id.toString()] = bucketItem;
+        return acc;
+      }, {});
+
+      // Merge both objects
+      const mergedSeries = seriesData.map((seriesItem) => {
+        const targetBucketId = seriesItem.contentIds?.[0]?.[0]
+          ? seriesItem.contentIds[0][0].toString()
+          : null;
+        const bucketData = targetBucketId ? bucketMap[targetBucketId] : {};
+
+        return {
+          ...bucketData,
+          ...seriesItem,
+          subtitleUrl: bucketData.subtitleUrl || seriesItem.subtitleUrl || '',
+        };
+      });
+
+      // 6. Format unique years for the dropdown
+      const allYears = [
+        ...new Set(
+          releaseDates
+            .filter((s) => s.release)
+            .map((s) => new Date(s.release).getFullYear())
+        ),
+      ].sort((a, b) => b - a);
+
+      // 7. Format unique genres
+      const allGenres = [...new Set(rawGenres.flat())];
+
+      res.status(200).json({
+        message: 'Series details fetched successfully.',
+        success: true,
+        data: {
+          series: mergedSeries,
+          allGenres,
+          allYears,
+          totalPages: Math.ceil(totalCount / parseInt(limit)) || 1,
+          currentPage: parseInt(page),
+          totalSeries: totalCount,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  editSeries = async (req, res, next) => {
+    try {
+      const { contentId, imdbLink, posterLink, seasons } = req.body;
+
+      if (!contentId) {
+        res.status(400);
+        throw new Error('ContentId is required.');
+      }
+
+      const response = await imdbFetch.fetchSeries(imdbLink);
+
+      // Check if another series is already using this IMDB ID
+      const isExists = await content.findOne({
+        imdbId: response.imdbId,
+        _id: { $ne: contentId },
+        isDeleted: false,
+      });
+
+      if (isExists) {
+        res.status(400);
+        throw new Error('Another series with this IMDB ID already exists.');
+      }
+
+      const oldContent = await content.findById(contentId);
+      if (!oldContent) {
+        res.status(404);
+        throw new Error('Series not found.');
+      }
+
+      // 1. Process Seasons & Episodes (Create new ones, update existing ones)
+      const newContentIds = [];
+      const newBucketIdsFlat = [];
+
+      for (let sIndex = 0; sIndex < seasons.length; sIndex++) {
+        const season = seasons[sIndex];
+        const seasonBucketIds = [];
+
+        for (let eIndex = 0; eIndex < season.episodes.length; eIndex++) {
+          const ep = season.episodes[eIndex];
+
+          if (ep._id) {
+            // Update existing episode bucket
+            await bucket.findByIdAndUpdate(ep._id, {
+              imdbId: response.imdbId || '',
+              baseUrl: ep.baseUrl,
+              chunkCount: Number(ep.totalChunks),
+              size_byte: Number(ep.totalSize),
+              subtitleUrl: ep.subtitleLink,
+              mimeType: ep.mimeType.toLowerCase(),
+            });
+            seasonBucketIds.push(ep._id);
+            newBucketIdsFlat.push(ep._id.toString());
+          } else {
+            // Create new episode bucket
+            const newBucket = await bucket.create({
+              imdbId: response.imdbId || '',
+              baseUrl: ep.baseUrl,
+              chunkCount: Number(ep.totalChunks),
+              size_byte: Number(ep.totalSize),
+              subtitleUrl: ep.subtitleLink,
+              mimeType: ep.mimeType.toLowerCase(),
+            });
+            seasonBucketIds.push(newBucket._id);
+            newBucketIdsFlat.push(newBucket._id.toString());
+          }
+        }
+        newContentIds.push(seasonBucketIds);
+      }
+
+      // 2. Clean up orphaned buckets (Episodes that were removed during edit)
+      const oldBucketIdsFlat = oldContent.contentIds
+        .flat()
+        .map((id) => id.toString());
+      const bucketsToDelete = oldBucketIdsFlat.filter(
+        (id) => !newBucketIdsFlat.includes(id)
+      );
+
+      if (bucketsToDelete.length > 0) {
+        await bucket.deleteMany({ _id: { $in: bucketsToDelete } });
+      }
+
+      // 3. Update the main Content document
+      await content.findByIdAndUpdate(
+        contentId,
+        {
+          imdbId: response.imdbId || '',
+          title: response.seriesData.data.Title || '',
+          description: response.seriesData.data.Plot || '',
+          release: response.seriesData.data.Released || '',
+          cast: response.seriesData.data.Actors.split(', ') || '',
+          runtime: response.seriesData.data.Runtime || '0 min',
+          rating: parseFloat(response.seriesData.data.imdbRating) || 0,
+          genre: response.seriesData.data.Genre.split(', ') || '',
+          posterUrl: {
+            horizontal: posterLink,
+            vertical: response.seriesData.data.Poster || '',
+          },
+          contentIds: newContentIds,
+        },
+        { new: true }
+      );
+
+      res.status(200).json({
+        message: 'Series updated successfully.',
         success: true,
       });
     } catch (err) {
