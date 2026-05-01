@@ -3,10 +3,11 @@ import content from '../../models/contentModel.js';
 import bucket from '../../models/bucketModel.js';
 import DateFormatter from '../../utils/DateFormatter.js';
 import SendEmailService from '../../services/sendMailService.js';
-import fetchMovie from '../../utils/fetchMovieDetails.js';
+import FetchContent from '../../utils/FetchContent.js';
 
 const mailer = new SendEmailService();
 const format = new DateFormatter();
+const imdbFetch = new FetchContent();
 
 export default class AdminController {
   dashboard = async (req, res, next) => {
@@ -82,7 +83,7 @@ export default class AdminController {
 
   addMovie = async (req, res, next) => {
     try {
-      const response = await fetchMovie(req.body.imdbLink);
+      const response = await imdbFetch.fetchMovie(req.body.imdbLink);
       const isExists = await content.findOne({
         imdbId: response.imdbId,
         isDeleted: false,
@@ -94,7 +95,7 @@ export default class AdminController {
       }
 
       const bucketInstance = await bucket.create({
-        imdbId: response.imdbId || "",
+        imdbId: response.imdbId || '',
         baseUrl: req.body.baseUrl,
         chunkCount: req.body.totalChunks,
         size_byte: req.body.totalSize,
@@ -103,17 +104,17 @@ export default class AdminController {
       });
 
       await content.create({
-        imdbId: response.imdbId || "",
-        title: response.movieData.data.Title || "",
-        description: response.movieData.data.Plot || "",
-        release: response.movieData.data.Released || "",
-        cast: response.movieData.data.Actors.split(', ') || "",
-        runtime: response.movieData.data.Runtime || "0 min",
+        imdbId: response.imdbId || '',
+        title: response.movieData.data.Title || '',
+        description: response.movieData.data.Plot || '',
+        release: response.movieData.data.Released || '',
+        cast: response.movieData.data.Actors.split(', ') || '',
+        runtime: response.movieData.data.Runtime || '0 min',
         rating: parseFloat(response.movieData.data.imdbRating) || 0,
-        genre: response.movieData.data.Genre.split(', ') || "",
+        genre: response.movieData.data.Genre.split(', ') || '',
         posterUrl: {
           horizontal: req.body.posterLink,
-          vertical: response.movieData.data.Poster || "" ,
+          vertical: response.movieData.data.Poster || '',
         },
         contentType: 'movie',
         contentIds: [[bucketInstance._id]],
@@ -126,6 +127,10 @@ export default class AdminController {
     } catch (err) {
       next(err);
     }
+  };
+
+  escapeRegex = (string) => {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   };
 
   // fetchMovie Controller
@@ -144,7 +149,8 @@ export default class AdminController {
 
       // 2. Apply Search Filter (Case-insensitive)
       if (search) {
-        query.title = { $regex: search, $options: 'i' };
+        const safeSearch = this.escapeRegex(search); // Escape the special characters first
+        query.title = { $regex: safeSearch, $options: 'i' };
       }
 
       // 3. Apply Genre Filter
@@ -235,7 +241,7 @@ export default class AdminController {
 
   editMovie = async (req, res, next) => {
     try {
-      const response = await fetchMovie(req.body.imdbLink);
+      const response = await imdbFetch.fetchMovie(req.body.imdbLink);
       const isExists = await content.findOne({
         imdbId: response.imdbId,
         _id: { $ne: req.body.contentId }, // Exclude the current movie being edited
@@ -250,17 +256,17 @@ export default class AdminController {
       const updatedContent = await content.findByIdAndUpdate(
         { _id: req.body.contentId },
         {
-          imdbId: response.imdbId || "",
-          title: response.movieData.data.Title || "",
-          description: response.movieData.data.Plot || "",
-          release: response.movieData.data.Released || "",
-          cast: response.movieData.data.Actors.split(', ') || "",
-          runtime: response.movieData.data.Runtime || "",
+          imdbId: response.imdbId || '',
+          title: response.movieData.data.Title || '',
+          description: response.movieData.data.Plot || '',
+          release: response.movieData.data.Released || '',
+          cast: response.movieData.data.Actors.split(', ') || '',
+          runtime: response.movieData.data.Runtime || '',
           rating: parseFloat(response.movieData.data.imdbRating) || 0,
-          genre: response.movieData.data.Genre.split(', ') || "",
+          genre: response.movieData.data.Genre.split(', ') || '',
           posterUrl: {
-            horizontal: req.body.posterLink ,
-            vertical: response.movieData.data.Poster || "",
+            horizontal: req.body.posterLink,
+            vertical: response.movieData.data.Poster || '',
           },
         },
         { new: true } // Returns the updated document
@@ -275,7 +281,7 @@ export default class AdminController {
       await bucket.findByIdAndUpdate(
         { _id: updatedContent.contentIds[0] },
         {
-          imdbId: response.imdbId || "",
+          imdbId: response.imdbId || '',
           baseUrl: req.body.baseUrl,
           chunkCount: req.body.totalChunks,
           size_byte: req.body.totalSize,
@@ -313,6 +319,56 @@ export default class AdminController {
 
       res.status(200).json({
         message: 'Movie deleted successfully',
+        success: true,
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  addSeries = async (req, res, next) => {
+    try {
+      // const response = await imdbFetch.fetchMovie(req.body.imdbLink);
+      // const isExists = await content.findOne({
+      //   imdbId: response.imdbId,
+      //   isDeleted: false,
+      // });
+
+      // if (isExists) {
+      //   res.status(400);
+      //   throw new Error('Movie already exists.');
+      // }
+
+      // const bucketInstance = await bucket.create({
+      //   imdbId: response.imdbId || '',
+      //   baseUrl: req.body.baseUrl,
+      //   chunkCount: req.body.totalChunks,
+      //   size_byte: req.body.totalSize,
+      //   subtitleUrl: req.body.subtitleLink,
+      //   mimeType: req.body.mimeType.toLowerCase(),
+      // });
+
+      // await content.create({
+      //   imdbId: response.imdbId || '',
+      //   title: response.movieData.data.Title || '',
+      //   description: response.movieData.data.Plot || '',
+      //   release: response.movieData.data.Released || '',
+      //   cast: response.movieData.data.Actors.split(', ') || '',
+      //   runtime: response.movieData.data.Runtime || '0 min',
+      //   rating: parseFloat(response.movieData.data.imdbRating) || 0,
+      //   genre: response.movieData.data.Genre.split(', ') || '',
+      //   posterUrl: {
+      //     horizontal: req.body.posterLink,
+      //     vertical: response.movieData.data.Poster || '',
+      //   },
+      //   contentType: 'movie',
+      //   contentIds: [[bucketInstance._id]],
+      // });
+      console.log(req.body);
+      
+
+      res.status(200).json({
+        message: 'Series added successfully.',
         success: true,
       });
     } catch (err) {

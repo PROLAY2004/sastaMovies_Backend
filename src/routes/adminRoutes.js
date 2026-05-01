@@ -20,5 +20,9 @@ router.post('/invite', userValidation.inviteRequest, admin.invite); // take name
 router.post('/movie', contentValidation.addMovieRequest, admin.addMovie); // take imdb, description, poster_link, base_url, total_chunks, total_size, mime_type
 router.post('/fetch-movie', admin.fetchMovie); // search query, filter data, pagination data
 router.put('/movie', contentValidation.editMovieRequest, admin.editMovie); // take contentId, imdb, description, poster_link, base_url, total_chunks, total_size, mime_type
-router.delete('/movie', admin.deleteMovie) // take only contentId in body
+router.delete('/movie', admin.deleteMovie); // take only contentId in body
+
+//series routes
+router.post('/series', contentValidation.editMovieRequest, admin.addSeries);
+
 export default router;
