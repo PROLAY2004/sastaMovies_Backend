@@ -397,10 +397,8 @@ export default class AdminController {
     }
   };
 
-  // fetchSeries Controller
   fetchSeries = async (req, res, next) => {
     try {
-      // 1. Extract query elements from req.body with default fallbacks
       const {
         search = '',
         genre = 'all',
@@ -411,25 +409,21 @@ export default class AdminController {
 
       const query = { contentType: 'series', isDeleted: false };
 
-      // 2. Apply Search Filter (Case-insensitive)
       if (search) {
         const safeSearch = this.escapeRegex(search);
         query.title = { $regex: safeSearch, $options: 'i' };
       }
 
-      // 3. Apply Genre Filter
       if (genre && genre !== 'all') {
         query.genre = genre;
       }
 
-      // 4. Apply Year Filter
       if (year && year !== 'all') {
         query.release = { $regex: year.toString(), $options: 'i' };
       }
 
       const skip = (parseInt(page) - 1) * parseInt(limit);
 
-      // 5. Run queries in parallel
       const [seriesData, totalCount, rawGenres, releaseDates] =
         await Promise.all([
           content
@@ -449,34 +443,47 @@ export default class AdminController {
             .lean(),
         ]);
 
-      const bucketIds = seriesData
-        .map((seriesItem) => seriesItem.contentIds?.[0]?.[0])
+      // FIX: Extract ALL bucket IDs from the nested arrays
+      const allBucketIds = seriesData
+        .flatMap((seriesItem) => seriesItem.contentIds.flat())
         .filter((id) => id);
 
-      // Fetch corresponding buckets
-      const buckets = await bucket.find({ _id: { $in: bucketIds } }).lean();
+      // Fetch all corresponding buckets in one go
+      const buckets = await bucket.find({ _id: { $in: allBucketIds } }).lean();
 
-      // Dictionary map for fast lookup
+      // Create a dictionary map for fast lookup
       const bucketMap = buckets.reduce((acc, bucketItem) => {
         acc[bucketItem._id.toString()] = bucketItem;
         return acc;
       }, {});
 
-      // Merge both objects
-      const mergedSeries = seriesData.map((seriesItem) => {
-        const targetBucketId = seriesItem.contentIds?.[0]?.[0]
-          ? seriesItem.contentIds[0][0].toString()
-          : null;
-        const bucketData = targetBucketId ? bucketMap[targetBucketId] : {};
+      // FIX: Reconstruct the full Season/Episode structure for the frontend
+      const formattedSeries = seriesData.map((seriesItem) => {
+        const mappedSeasons = (seriesItem.contentIds || []).map(
+          (seasonIds, sIndex) => {
+            return {
+              seasonNumber: sIndex + 1,
+              episodes: seasonIds.map((epId) => {
+                const bData = bucketMap[epId.toString()] || {};
+                return {
+                  _id: bData._id,
+                  baseUrl: bData.baseUrl || '',
+                  totalChunks: bData.chunkCount || '', // Map DB field to frontend state
+                  totalSize: bData.size_byte || '', // Map DB field to frontend state
+                  mimeType: bData.mimeType || '',
+                  subtitleLink: bData.subtitleUrl || '', // Map DB field to frontend state
+                };
+              }),
+            };
+          }
+        );
 
         return {
-          ...bucketData,
           ...seriesItem,
-          subtitleUrl: bucketData.subtitleUrl || seriesItem.subtitleUrl || '',
+          seasons: mappedSeasons, // Attach the full reconstructed seasons array
         };
       });
 
-      // 6. Format unique years for the dropdown
       const allYears = [
         ...new Set(
           releaseDates
@@ -485,14 +492,13 @@ export default class AdminController {
         ),
       ].sort((a, b) => b - a);
 
-      // 7. Format unique genres
       const allGenres = [...new Set(rawGenres.flat())];
 
       res.status(200).json({
         message: 'Series details fetched successfully.',
         success: true,
         data: {
-          series: mergedSeries,
+          series: formattedSeries, // Send the newly structured series
           allGenres,
           allYears,
           totalPages: Math.ceil(totalCount / parseInt(limit)) || 1,
@@ -504,7 +510,7 @@ export default class AdminController {
       next(err);
     }
   };
-
+  
   editSeries = async (req, res, next) => {
     try {
       const { contentId, imdbLink, posterLink, seasons } = req.body;
