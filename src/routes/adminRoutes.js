@@ -23,6 +23,6 @@ router.put('/movie', contentValidation.editMovieRequest, admin.editMovie); // ta
 router.delete('/movie', admin.deleteMovie); // take only contentId in body
 
 //series routes
-router.post('/series', contentValidation.editMovieRequest, admin.addSeries);
+router.post('/series', contentValidation.addSeriesRequest, admin.addSeries); // imdb link, poster url, array of seasons
 
 export default router;

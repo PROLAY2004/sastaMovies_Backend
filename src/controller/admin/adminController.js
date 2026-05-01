@@ -328,16 +328,16 @@ export default class AdminController {
 
   addSeries = async (req, res, next) => {
     try {
-      // const response = await imdbFetch.fetchMovie(req.body.imdbLink);
-      // const isExists = await content.findOne({
-      //   imdbId: response.imdbId,
-      //   isDeleted: false,
-      // });
+      const response = await imdbFetch.fetchSeries(req.body.imdbLink);
+      const isExists = await content.findOne({
+        imdbId: response.imdbId,
+        isDeleted: false,
+      });
 
-      // if (isExists) {
-      //   res.status(400);
-      //   throw new Error('Movie already exists.');
-      // }
+      if (isExists) {
+        res.status(400);
+        throw new Error('Series already exists.');
+      }
 
       // const bucketInstance = await bucket.create({
       //   imdbId: response.imdbId || '',
@@ -364,7 +364,7 @@ export default class AdminController {
       //   contentType: 'movie',
       //   contentIds: [[bucketInstance._id]],
       // });
-      console.log(req.body);
+      console.log(req.body.seasons);
       
 
       res.status(200).json({
