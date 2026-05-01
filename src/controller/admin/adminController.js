@@ -510,7 +510,7 @@ export default class AdminController {
       next(err);
     }
   };
-  
+
   editSeries = async (req, res, next) => {
     try {
       const { contentId, imdbLink, posterLink, seasons } = req.body;
@@ -520,98 +520,126 @@ export default class AdminController {
         throw new Error('ContentId is required.');
       }
 
-      const response = await imdbFetch.fetchSeries(imdbLink);
+      // 1. Fail Fast: Check DB before slow external API call
+      const extractedIdMatch = imdbLink.match(/(tt\d+)/);
+      const extractedImdbId = extractedIdMatch ? extractedIdMatch[1] : null;
 
-      // Check if another series is already using this IMDB ID
-      const isExists = await content.findOne({
-        imdbId: response.imdbId,
-        _id: { $ne: contentId },
-        isDeleted: false,
-      });
+      if (extractedImdbId) {
+        const isExists = await content
+          .findOne({
+            imdbId: extractedImdbId,
+            _id: { $ne: contentId },
+            isDeleted: false,
+          })
+          .lean();
 
-      if (isExists) {
-        res.status(400);
-        throw new Error('Another series with this IMDB ID already exists.');
+        if (isExists) {
+          res.status(400);
+          throw new Error('Another series with this IMDB ID already exists.');
+        }
       }
 
-      const oldContent = await content.findById(contentId);
+      const response = await imdbFetch.fetchSeries(imdbLink);
+
+      const oldContent = await content.findById(contentId).lean();
       if (!oldContent) {
         res.status(404);
         throw new Error('Series not found.');
       }
 
-      // 1. Process Seasons & Episodes (Create new ones, update existing ones)
-      const newContentIds = [];
-      const newBucketIdsFlat = [];
+      // Initialize structures
+      const newContentIds = Array.from({ length: seasons.length }, () => []);
+      const newEpisodesFlat = [];
+      const bulkOps = [];
+      const keptBucketIds = [];
 
-      for (let sIndex = 0; sIndex < seasons.length; sIndex++) {
-        const season = seasons[sIndex];
-        const seasonBucketIds = [];
-
-        for (let eIndex = 0; eIndex < season.episodes.length; eIndex++) {
-          const ep = season.episodes[eIndex];
+      // 2. Separate new episodes (for insertMany) from existing ones (for bulkWrite)
+      seasons.forEach((season, sIndex) => {
+        season.episodes.forEach((ep, eIndex) => {
+          const bucketData = {
+            imdbId: response.imdbId || '',
+            baseUrl: ep.baseUrl,
+            chunkCount: Number(ep.totalChunks || ep.chunkCount),
+            size_byte: Number(ep.totalSize || ep.size_byte),
+            subtitleUrl: ep.subtitleLink || ep.subtitleUrl || '',
+            mimeType: ep.mimeType.toLowerCase(),
+          };
 
           if (ep._id) {
-            // Update existing episode bucket
-            await bucket.findByIdAndUpdate(ep._id, {
-              imdbId: response.imdbId || '',
-              baseUrl: ep.baseUrl,
-              chunkCount: Number(ep.totalChunks),
-              size_byte: Number(ep.totalSize),
-              subtitleUrl: ep.subtitleLink,
-              mimeType: ep.mimeType.toLowerCase(),
+            // Existing episode -> Queue for bulk update
+            bulkOps.push({
+              updateOne: {
+                filter: { _id: ep._id },
+                update: { $set: bucketData },
+              },
             });
-            seasonBucketIds.push(ep._id);
-            newBucketIdsFlat.push(ep._id.toString());
+            // Place exactly at its index to preserve array order
+            newContentIds[sIndex][eIndex] = ep._id;
+            keptBucketIds.push(ep._id.toString());
           } else {
-            // Create new episode bucket
-            const newBucket = await bucket.create({
-              imdbId: response.imdbId || '',
-              baseUrl: ep.baseUrl,
-              chunkCount: Number(ep.totalChunks),
-              size_byte: Number(ep.totalSize),
-              subtitleUrl: ep.subtitleLink,
-              mimeType: ep.mimeType.toLowerCase(),
+            // New episode -> Queue for insertMany (same logic as addSeries)
+            newEpisodesFlat.push({
+              ...bucketData,
+              _seasonIndex: sIndex,
+              _episodeIndex: eIndex, // track exact episode position
             });
-            seasonBucketIds.push(newBucket._id);
-            newBucketIdsFlat.push(newBucket._id.toString());
           }
-        }
-        newContentIds.push(seasonBucketIds);
+        });
+      });
+
+      // 3. Handle NEW episodes via insertMany
+      if (newEpisodesFlat.length > 0) {
+        const inserted = await bucket.insertMany(newEpisodesFlat);
+
+        // Rebuild contentIds exactly where they belong
+        inserted.forEach((doc, i) => {
+          const sIndex = newEpisodesFlat[i]._seasonIndex;
+          const eIndex = newEpisodesFlat[i]._episodeIndex;
+          newContentIds[sIndex][eIndex] = doc._id;
+          keptBucketIds.push(doc._id.toString());
+        });
       }
 
-      // 2. Clean up orphaned buckets (Episodes that were removed during edit)
+      // 4. Handle DELETED episodes
       const oldBucketIdsFlat = oldContent.contentIds
         .flat()
         .map((id) => id.toString());
       const bucketsToDelete = oldBucketIdsFlat.filter(
-        (id) => !newBucketIdsFlat.includes(id)
+        (id) => !keptBucketIds.includes(id)
       );
 
       if (bucketsToDelete.length > 0) {
-        await bucket.deleteMany({ _id: { $in: bucketsToDelete } });
+        bulkOps.push({
+          deleteMany: {
+            filter: { _id: { $in: bucketsToDelete } },
+          },
+        });
       }
 
-      // 3. Update the main Content document
-      await content.findByIdAndUpdate(
-        contentId,
-        {
-          imdbId: response.imdbId || '',
-          title: response.seriesData.data.Title || '',
-          description: response.seriesData.data.Plot || '',
-          release: response.seriesData.data.Released || '',
-          cast: response.seriesData.data.Actors.split(', ') || '',
-          runtime: response.seriesData.data.Runtime || '0 min',
-          rating: parseFloat(response.seriesData.data.imdbRating) || 0,
-          genre: response.seriesData.data.Genre.split(', ') || '',
-          posterUrl: {
-            horizontal: posterLink,
-            vertical: response.seriesData.data.Poster || '',
+      // 5. Execute Updates/Deletes and update main content simultaneously
+      await Promise.all([
+        bulkOps.length > 0 ? bucket.bulkWrite(bulkOps) : Promise.resolve(),
+
+        content.findByIdAndUpdate(
+          contentId,
+          {
+            imdbId: response.imdbId || '',
+            title: response.seriesData.data.Title || '',
+            description: response.seriesData.data.Plot || '',
+            release: response.seriesData.data.Released || '',
+            cast: response.seriesData.data.Actors.split(', ') || '',
+            runtime: response.seriesData.data.Runtime || '0 min',
+            rating: parseFloat(response.seriesData.data.imdbRating) || 0,
+            genre: response.seriesData.data.Genre.split(', ') || '',
+            posterUrl: {
+              horizontal: posterLink,
+              vertical: response.seriesData.data.Poster || '',
+            },
+            contentIds: newContentIds,
           },
-          contentIds: newContentIds,
-        },
-        { new: true }
-      );
+          { new: true }
+        ),
+      ]);
 
       res.status(200).json({
         message: 'Series updated successfully.',
