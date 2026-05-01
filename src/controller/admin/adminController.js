@@ -33,6 +33,7 @@ export default class AdminController {
           contentType: 'series',
         }),
       ]);
+      
 
       res.status(200).json({
         message: 'Dashboard data fetched successfully.',
@@ -328,9 +329,10 @@ export default class AdminController {
 
   addSeries = async (req, res, next) => {
     try {
-      const contentIds = [];
-      const { imdbLink, posterUrl, seasons } = req.body;
+      const { imdbLink, posterLink, seasons } = req.body;
+
       const response = await imdbFetch.fetchSeries(imdbLink);
+
       const isExists = await content.findOne({
         imdbId: response.imdbId,
         isDeleted: false,
@@ -341,24 +343,35 @@ export default class AdminController {
         throw new Error('Series already exists.');
       }
 
-      for (let i = 0; i < seasons.length; i++) {
-        const episodes = [];
+      // 🔥 1. Flatten all episodes with season index
+      const flat = [];
 
-        for (let j = 0; j < seasons[i].episodes.length; j++) {
-          const { totalChunks, totalSize, ...rest } = seasons[i].episodes[j];
-          const bucketInstance = await bucket.create({
+      seasons.forEach((season, sIndex) => {
+        season.episodes.forEach((ep) => {
+          const { totalChunks, totalSize, ...rest } = ep;
+
+          flat.push({
             ...rest,
             chunkCount: Number(totalChunks),
             size_byte: Number(totalSize),
             imdbId: response.imdbId || '',
+            _seasonIndex: sIndex, // track season
           });
+        });
+      });
 
-          episodes.push(bucketInstance._id);
-        }
+      // 🚀 2. Single bulk insert (FASTEST)
+      const inserted = await bucket.insertMany(flat);
 
-        contentIds.push(episodes);
-      }
+      // 🔁 3. Rebuild contentIds (season-wise)
+      const contentIds = Array.from({ length: seasons.length }, () => []);
 
+      inserted.forEach((doc, i) => {
+        const sIndex = flat[i]._seasonIndex;
+        contentIds[sIndex].push(doc._id);
+      });
+
+      // 📦 4. Create content
       await content.create({
         imdbId: response.imdbId || '',
         title: response.seriesData.data.Title || '',
@@ -369,7 +382,7 @@ export default class AdminController {
         rating: parseFloat(response.seriesData.data.imdbRating) || 0,
         genre: response.seriesData.data.Genre.split(', ') || '',
         posterUrl: {
-          horizontal: req.body.posterLink,
+          horizontal: posterLink,
           vertical: response.seriesData.data.Poster || '',
         },
         contentType: 'series',
