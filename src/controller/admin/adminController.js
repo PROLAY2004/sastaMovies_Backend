@@ -328,7 +328,9 @@ export default class AdminController {
 
   addSeries = async (req, res, next) => {
     try {
-      const response = await imdbFetch.fetchSeries(req.body.imdbLink);
+      const contentIds = [];
+      const { imdbLink, posterUrl, seasons } = req.body;
+      const response = await imdbFetch.fetchSeries(imdbLink);
       const isExists = await content.findOne({
         imdbId: response.imdbId,
         isDeleted: false,
@@ -339,33 +341,40 @@ export default class AdminController {
         throw new Error('Series already exists.');
       }
 
-      // const bucketInstance = await bucket.create({
-      //   imdbId: response.imdbId || '',
-      //   baseUrl: req.body.baseUrl,
-      //   chunkCount: req.body.totalChunks,
-      //   size_byte: req.body.totalSize,
-      //   subtitleUrl: req.body.subtitleLink,
-      //   mimeType: req.body.mimeType.toLowerCase(),
-      // });
+      for (let i = 0; i < seasons.length; i++) {
+        const episodes = [];
 
-      // await content.create({
-      //   imdbId: response.imdbId || '',
-      //   title: response.movieData.data.Title || '',
-      //   description: response.movieData.data.Plot || '',
-      //   release: response.movieData.data.Released || '',
-      //   cast: response.movieData.data.Actors.split(', ') || '',
-      //   runtime: response.movieData.data.Runtime || '0 min',
-      //   rating: parseFloat(response.movieData.data.imdbRating) || 0,
-      //   genre: response.movieData.data.Genre.split(', ') || '',
-      //   posterUrl: {
-      //     horizontal: req.body.posterLink,
-      //     vertical: response.movieData.data.Poster || '',
-      //   },
-      //   contentType: 'movie',
-      //   contentIds: [[bucketInstance._id]],
-      // });
-      console.log(req.body.seasons);
-      
+        for (let j = 0; j < seasons[i].episodes.length; j++) {
+          const { totalChunks, totalSize, ...rest } = seasons[i].episodes[j];
+          const bucketInstance = await bucket.create({
+            ...rest,
+            chunkCount: Number(totalChunks),
+            size_byte: Number(totalSize),
+            imdbId: response.imdbId || '',
+          });
+
+          episodes.push(bucketInstance._id);
+        }
+
+        contentIds.push(episodes);
+      }
+
+      await content.create({
+        imdbId: response.imdbId || '',
+        title: response.seriesData.data.Title || '',
+        description: response.seriesData.data.Plot || '',
+        release: response.seriesData.data.Released || '',
+        cast: response.seriesData.data.Actors.split(', ') || '',
+        runtime: response.seriesData.data.Runtime || '0 min',
+        rating: parseFloat(response.seriesData.data.imdbRating) || 0,
+        genre: response.seriesData.data.Genre.split(', ') || '',
+        posterUrl: {
+          horizontal: req.body.posterLink,
+          vertical: response.seriesData.data.Poster || '',
+        },
+        contentType: 'series',
+        contentIds,
+      });
 
       res.status(200).json({
         message: 'Series added successfully.',
