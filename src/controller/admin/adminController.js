@@ -94,7 +94,7 @@ export default class AdminController {
       }
 
       const bucketInstance = await bucket.create({
-        imdbId: response.imdbId,
+        imdbId: response.imdbId || "",
         baseUrl: req.body.baseUrl,
         chunkCount: req.body.totalChunks,
         size_byte: req.body.totalSize,
@@ -103,17 +103,17 @@ export default class AdminController {
       });
 
       await content.create({
-        imdbId: response.imdbId,
-        title: response.movieData.data.Title,
-        description: response.movieData.data.Plot,
-        release: response.movieData.data.Released,
-        cast: response.movieData.data.Actors.split(', '),
-        runtime: response.movieData.data.Runtime,
-        rating: parseFloat(response.movieData.data.imdbRating),
-        genre: response.movieData.data.Genre.split(', '),
+        imdbId: response.imdbId || "",
+        title: response.movieData.data.Title || "",
+        description: response.movieData.data.Plot || "",
+        release: response.movieData.data.Released || "",
+        cast: response.movieData.data.Actors.split(', ') || "",
+        runtime: response.movieData.data.Runtime || "0 min",
+        rating: parseFloat(response.movieData.data.imdbRating) || 0,
+        genre: response.movieData.data.Genre.split(', ') || "",
         posterUrl: {
           horizontal: req.body.posterLink,
-          vertical: response.movieData.data.Poster,
+          vertical: response.movieData.data.Poster || "" ,
         },
         contentType: 'movie',
         contentIds: [[bucketInstance._id]],
@@ -250,17 +250,17 @@ export default class AdminController {
       const updatedContent = await content.findByIdAndUpdate(
         { _id: req.body.contentId },
         {
-          imdbId: response.imdbId,
-          title: response.movieData.data.Title,
-          description: response.movieData.data.Plot,
-          release: response.movieData.data.Released,
-          cast: response.movieData.data.Actors.split(', '),
-          runtime: response.movieData.data.Runtime,
-          rating: parseFloat(response.movieData.data.imdbRating),
-          genre: response.movieData.data.Genre.split(', '),
+          imdbId: response.imdbId || "",
+          title: response.movieData.data.Title || "",
+          description: response.movieData.data.Plot || "",
+          release: response.movieData.data.Released || "",
+          cast: response.movieData.data.Actors.split(', ') || "",
+          runtime: response.movieData.data.Runtime || "",
+          rating: parseFloat(response.movieData.data.imdbRating) || 0,
+          genre: response.movieData.data.Genre.split(', ') || "",
           posterUrl: {
-            horizontal: req.body.posterLink,
-            vertical: response.movieData.data.Poster,
+            horizontal: req.body.posterLink ,
+            vertical: response.movieData.data.Poster || "",
           },
         },
         { new: true } // Returns the updated document
@@ -275,7 +275,7 @@ export default class AdminController {
       await bucket.findByIdAndUpdate(
         { _id: updatedContent.contentIds[0] },
         {
-          imdbId: response.imdbId,
+          imdbId: response.imdbId || "",
           baseUrl: req.body.baseUrl,
           chunkCount: req.body.totalChunks,
           size_byte: req.body.totalSize,
