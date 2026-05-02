@@ -76,7 +76,7 @@ export default class AdminController {
       await newUser.save();
 
       // 🔹 Send mail
-      mailer.activationMailer(
+      await mailer.activationMailer(
         name,
         email,
         format.dateAndTimeTemplate(Date.now()),
@@ -92,13 +92,86 @@ export default class AdminController {
     }
   };
 
+  // fetchUsers Controller
   fetchUsers = async (req, res, next) => {
     try {
-      
+      const {
+        search = '',
+        status = 'all',
+        sort = 'newest', // Replaced role with sort
+        page = 1,
+        limit = 5,
+      } = req.body;
+
+      // Base query: Strictly exclude admins
+      const query = { role: { $ne: 'admin' } };
+
+      // 1. Apply Search Filter (Case-insensitive)
+      if (search) {
+        const safeSearch = this.escapeRegex(search);
+        query.$or = [
+          { name: { $regex: safeSearch, $options: 'i' } },
+          { email: { $regex: safeSearch, $options: 'i' } },
+        ];
+      }
+
+      // 2. Apply Status Filter (Simplified since admins are gone)
+      if (status && status !== 'all') {
+        if (status === 'active') {
+          query.isBlocked = false;
+          query.validTill = { $gte: new Date() };
+        } else if (status === 'blocked') {
+          query.isBlocked = true;
+        } else if (status === 'expired') {
+          query.validTill = { $lt: new Date() };
+        }
+      }
+
+      // 3. Apply Sorting Logic
+      let sortQuery = { createdAt: -1 }; // Default: Newest first
+      switch (sort) {
+        case 'name_asc':
+          sortQuery = { name: 1 };
+          break;
+        case 'name_desc':
+          sortQuery = { name: -1 };
+          break;
+        case 'login_recent':
+          sortQuery = { lastLogin: -1 };
+          break;
+        case 'expiry_soon':
+          sortQuery = { validTill: 1 };
+          break;
+        case 'expiry_latest':
+          sortQuery = { validTill: -1 };
+          break;
+        case 'newest':
+        default:
+          sortQuery = { createdAt: -1 };
+          break;
+      }
+
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+
+      // 4. Run queries in parallel
+      const [users, totalCount] = await Promise.all([
+        user.find(query)
+          .sort(sortQuery)
+          .skip(skip)
+          .limit(parseInt(limit))
+          .lean(),
+        user.countDocuments(query),
+      ]);
 
       res.status(200).json({
         message: 'User details fetched successfully.',
         success: true,
+        data: {
+          users,
+          totalPages: Math.ceil(totalCount / parseInt(limit)) || 1,
+          currentPage: parseInt(page),
+          totalUsers: totalCount,
+        },
       });
     } catch (err) {
       next(err);
