@@ -30,6 +30,12 @@ const usrSchema = new mongoose.Schema(
       default: false,
     },
 
+    isDeleted: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+
     lastLogin: {
       type: Date,
       default: null,

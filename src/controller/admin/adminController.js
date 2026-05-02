@@ -92,6 +92,19 @@ export default class AdminController {
     }
   };
 
+  fetchUsers = async (req, res, next) => {
+    try {
+      
+
+      res.status(200).json({
+        message: 'User details fetched successfully.',
+        success: true,
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
   addMovie = async (req, res, next) => {
     try {
       const response = await imdbFetch.fetchMovie(req.body.imdbLink);
