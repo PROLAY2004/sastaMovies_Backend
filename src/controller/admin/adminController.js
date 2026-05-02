@@ -16,7 +16,8 @@ export default class AdminController {
       const [userCount, contents, movieCount, seriesCount] = await Promise.all([
         user.countDocuments({
           isBlocked: false,
-          validTill: { $gt: Date.now() },
+          isDeleted: false,
+          validTill: { $gt: new Date() },
           role: 'user',
         }),
         content
@@ -155,7 +156,8 @@ export default class AdminController {
 
       // 4. Run queries in parallel
       const [users, totalCount] = await Promise.all([
-        user.find(query)
+        user
+          .find(query)
           .sort(sortQuery)
           .skip(skip)
           .limit(parseInt(limit))
@@ -172,6 +174,33 @@ export default class AdminController {
           currentPage: parseInt(page),
           totalUsers: totalCount,
         },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  deleteUser = async (req, res, next) => {
+    try {
+      if (!req.body.userId) {
+        res.status(400);
+        throw new Error('UserId is Required');
+      }
+
+      const updatedUser = await user.findOneAndUpdate(
+        { _id: req.body.userId },
+        { $set: { isDeleted: true } },
+        { new: true } // Returns the modified document
+      );
+
+      if (!updatedUser) {
+        res.status(400);
+        throw new Error('User does not exists or deleted.');
+      }
+
+      res.status(200).json({
+        message: 'User deleted successfully',
+        success: true,
       });
     } catch (err) {
       next(err);
