@@ -18,6 +18,12 @@ export default class TokenValidation {
         throw new Error('User Blocked by admin.');
       }
 
+      if (appUser.isDeleted) {
+        res.status(401);
+
+        throw new Error('User deleted. Logging out!');
+      }
+
       const expiryTime = new Date(appUser.validTill);
       const now = new Date();
 
@@ -49,6 +55,12 @@ export default class TokenValidation {
           throw new Error('Access Denied. Admins only.');
         }
 
+        if (appUser.isBlocked || appUser.isDeleted) {
+          res.status(401);
+
+          throw new Error('User Restricted. Logged out!');
+        }
+
         req.user = appUser;
 
         next();
@@ -71,6 +83,12 @@ export default class TokenValidation {
       const appUser = await user.findOne({ _id: decoded.userId });
 
       if (appUser) {
+        if (appUser.isBlocked || appUser.isDeleted) {
+          res.status(401);
+
+          throw new Error('User Restricted. Logged out!');
+        }
+
         req.user = appUser;
 
         next();

@@ -13,12 +13,12 @@ export default class AuthController {
         throw new Error('Enter your email to continue.');
       }
 
-      const isUser = await user.findOne({ email: req.body.email });
+      const isUser = await user.findOne({ email: req.body.email, isDeleted:false });
       const now = new Date();
 
       if (!isUser) {
         res.status(400);
-        throw new Error('User does not exists.');
+        throw new Error('User does not exists or deleted.');
       }
 
       if (isUser.isBlocked) {
@@ -104,11 +104,11 @@ export default class AuthController {
       const userResponse = await axios.get(
         `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleResponse.tokens.access_token}`
       );
-      const userInfo = await user.findOne({ email: userResponse.data.email });
+      const userInfo = await user.findOne({ email: userResponse.data.email, isDeleted : false });
 
       if (!userInfo) {
         res.status(404);
-        throw new Error('User does not exists');
+        throw new Error('User does not exists or deleted');
       }
 
       if (userInfo.isBlocked) {
