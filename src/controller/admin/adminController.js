@@ -51,20 +51,31 @@ export default class AdminController {
 
   invite = async (req, res, next) => {
     try {
-      const { name, email, days } = req.body;
-      const validTill = new Date();
-      const isUser = await user.findOne({ email });
+      const { name, email, date } = req.body;
 
+      // 🔹 Check existing user
+      const isUser = await user.findOne({ email });
       if (isUser) {
         res.status(400);
-
         throw new Error('Email already exists.');
       }
 
-      validTill.setDate(validTill.getDate() + days);
+      // 🔹 Create validTill (date + current time)
+      const now = new Date();
+      const validTill = new Date(date);
+
+      validTill.setHours(
+        now.getHours(),
+        now.getMinutes(),
+        now.getSeconds(),
+        now.getMilliseconds()
+      );
+
+      // 🔹 Save user
       const newUser = new user({ name, email, validTill });
       await newUser.save();
 
+      // 🔹 Send mail
       mailer.activationMailer(
         name,
         email,

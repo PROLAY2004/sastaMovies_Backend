@@ -32,7 +32,7 @@ const usrSchema = new mongoose.Schema(
 
     lastLogin: {
       type: Date,
-      required: true,
+      default: null,
     },
 
     savedContents: {

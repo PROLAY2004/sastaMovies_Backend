@@ -7,7 +7,7 @@ export default class ContentValidation {
   addMovieRequest = async (req, res, next) => {
     try {
       await schema.addMovieSchema.validate(req.body, {
-        abortEarly: false, // return all validation errors
+        abortEarly: true, // return all validation errors
         stripUnknown: true, // remove unexpected fields
       });
 
@@ -25,7 +25,7 @@ export default class ContentValidation {
   editMovieRequest = async (req, res, next) => {
     try {
       await schema.editMovieSchema.validate(req.body, {
-        abortEarly: false, // return all validation errors
+        abortEarly: true, // return all validation errors
         stripUnknown: true, // remove unexpected fields
       });
 
@@ -43,7 +43,7 @@ export default class ContentValidation {
   addSeriesRequest = async (req, res, next) => {
     try {
       await schema.addSeriesSchema.validate(req.body, {
-        abortEarly: false, // return all validation errors
+        abortEarly: true, // return all validation errors
         stripUnknown: true, // remove unexpected fields
       });
 
@@ -61,7 +61,7 @@ export default class ContentValidation {
   editSeriesRequest = async (req, res, next) => {
     try {
       await schema.editSeriesSchema.validate(req.body, {
-        abortEarly: false, // return all validation errors
+        abortEarly: true, // return all validation errors
         stripUnknown: true, // remove unexpected fields
       });
 

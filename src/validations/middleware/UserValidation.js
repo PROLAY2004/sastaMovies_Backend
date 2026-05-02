@@ -7,7 +7,7 @@ export default class UserValidation {
   inviteRequest = async (req, res, next) => {
     try {
       await schema.inviteSchema.validate(req.body, {
-        abortEarly: false, // return all validation errors
+        abortEarly: true, // return all validation errors
         stripUnknown: true, // remove unexpected fields
       });
 
