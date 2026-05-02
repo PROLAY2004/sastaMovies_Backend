@@ -105,7 +105,7 @@ export default class AdminController {
       } = req.body;
 
       // Base query: Strictly exclude admins
-      const query = { role: { $ne: 'admin' } };
+      const query = { role: { $ne: 'admin' }, isDeleted: false };
 
       // 1. Apply Search Filter (Case-insensitive)
       if (search) {
@@ -188,9 +188,18 @@ export default class AdminController {
       }
 
       const updatedUser = await user.findOneAndUpdate(
-        { _id: req.body.userId },
-        { $set: { isBlocked: { $not: '$isBlocked' } } },
-        { new: true } // Returns the modified document
+        { _id: req.body.userId, isDeleted: false },
+        [
+          {
+            $set: {
+              isBlocked: { $not: '$isBlocked' },
+            },
+          },
+        ],
+        {
+          returnDocument: 'after',
+          updatePipeline: true, // required for your mongoose version
+        }
       );
 
       if (!updatedUser) {
@@ -198,10 +207,53 @@ export default class AdminController {
         throw new Error('User does not exists or deleted.');
       }
 
-      const message = "user" + updatedUser.isBlocked ? "blocked" : "unblocked" + "successfully.";
+      const message = `User ${
+        updatedUser.isBlocked ? 'blocked' : 'unblocked'
+      } successfully.`;
 
       res.status(200).json({
         message,
+        success: true,
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  renewUser = async (req, res, next) => {
+    try {
+      if (!req.body.userId) {
+        res.status(400);
+        throw new Error('UserId is Required');
+      }
+
+      const inputDate = new Date(req.body.date);
+      const tomorrow = new Date();
+
+      inputDate.setHours(0, 0, 0, 0);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+
+      if (inputDate < tomorrow) {
+        throw new Error('Date must be at least tomorrow');
+      }
+
+      const now = new Date();
+      inputDate.setHours(
+        now.getHours(),
+        now.getMinutes(),
+        now.getSeconds(),
+        now.getMilliseconds()
+      );
+
+      const updatedUser = await user.findOneAndUpdate(
+        { _id: req.body.userId, isDeleted: false },
+        { $set: { validTill: inputDate } },
+        { new: true } // Returns the modified document
+      );
+
+      res.status(200).json({
+        message: 'User subscription renewed',
         success: true,
       });
     } catch (err) {
@@ -217,7 +269,7 @@ export default class AdminController {
       }
 
       const updatedUser = await user.findOneAndUpdate(
-        { _id: req.body.userId },
+        { _id: req.body.userId, isDeleted: false },
         { $set: { isDeleted: true } },
         { new: true } // Returns the modified document
       );
