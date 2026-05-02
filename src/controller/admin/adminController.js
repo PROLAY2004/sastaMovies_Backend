@@ -180,6 +180,35 @@ export default class AdminController {
     }
   };
 
+  changeStatus = async (req, res, next) => {
+    try {
+      if (!req.body.userId) {
+        res.status(400);
+        throw new Error('UserId is Required');
+      }
+
+      const updatedUser = await user.findOneAndUpdate(
+        { _id: req.body.userId },
+        { $set: { isBlocked: { $not: '$isBlocked' } } },
+        { new: true } // Returns the modified document
+      );
+
+      if (!updatedUser) {
+        res.status(400);
+        throw new Error('User does not exists or deleted.');
+      }
+
+      const message = "user" + updatedUser.isBlocked ? "blocked" : "unblocked" + "successfully.";
+
+      res.status(200).json({
+        message,
+        success: true,
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
   deleteUser = async (req, res, next) => {
     try {
       if (!req.body.userId) {
