@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const activitySchema = new mongoose.Schema(
   {
     adminId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: 'userdata',
       required: true,
     },
@@ -31,5 +31,5 @@ const activitySchema = new mongoose.Schema(
   }
 );
 
-const Activity = mongoose.model('activity', activitySchema);
-export default Activity;
+const activity = mongoose.model('activity', activitySchema);
+export default activity;
