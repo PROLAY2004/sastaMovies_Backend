@@ -77,7 +77,7 @@ export default class UserController {
       if (status && status !== 'all') {
         if (status === 'active') {
           query.isBlocked = false;
-          query.validTill = { $gte: new Date() };
+          query.validTill = { $gt: new Date() };
         } else if (status === 'blocked') {
           query.isBlocked = true;
         } else if (status === 'expired') {
@@ -185,28 +185,23 @@ export default class UserController {
       }
 
       const inputDate = new Date(req.body.date);
-      const tomorrow = new Date();
 
-      inputDate.setHours(0, 0, 0, 0);
+      const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(0, 0, 0, 0);
+
+      inputDate.setHours(0, 0, 0, 0);
 
       if (inputDate < tomorrow) {
         throw new Error('Date must be at least tomorrow');
       }
 
-      const now = new Date();
-      inputDate.setHours(
-        now.getHours(),
-        now.getMinutes(),
-        now.getSeconds(),
-        now.getMilliseconds()
-      );
+      // ✅ SAME LOGIC AS INVITE
+      inputDate.setHours(23, 59, 59, 999);
 
-      const updatedUser = await user.findOneAndUpdate(
+      await user.findOneAndUpdate(
         { _id: req.body.userId, isDeleted: false },
-        { $set: { validTill: inputDate } },
-        { new: true } // Returns the modified document
+        { $set: { validTill: inputDate } }
       );
 
       res.status(200).json({
