@@ -1,4 +1,5 @@
 import user from '../../models/userModel.js';
+import activity from '../../models/activityModel.js';
 import DateFormatter from '../../utils/DateFormatter.js';
 import SendEmailService from '../../services/sendMailService.js';
 import escapeRegex from '../../utils/searchRegex.js';
@@ -30,11 +31,19 @@ export default class UserController {
       );
 
       // 🔹 Save user
-      const newUser = new user({ name, email, validTill });
-      await newUser.save();
+      const newUser = await user.create({ name, email, validTill });
+
+      await activity.create({
+        adminId: req.user._id,
+        adminName: req.user.name,
+        adminEmail: req.user.email,
+        action: 'New User Added',
+        targetName: name,
+        targetDetails: email,
+      });
 
       // 🔹 Send mail
-      await mailer.activationMailer(
+      mailer.activationMailer(
         name,
         email,
         format.dateAndTimeTemplate(Date.now()),
@@ -164,6 +173,15 @@ export default class UserController {
         throw new Error('User does not exists or deleted.');
       }
 
+      await activity.create({
+        adminId: req.user._id,
+        adminName: req.user.name,
+        adminEmail: req.user.email,
+        action: `User ${updatedUser.isBlocked ? 'blocked' : 'unblocked'}`,
+        targetName: updatedUser.name,
+        targetDetails: updatedUser.email,
+      });
+
       const message = `User ${
         updatedUser.isBlocked ? 'blocked' : 'unblocked'
       } successfully.`;
@@ -199,10 +217,24 @@ export default class UserController {
       // ✅ SAME LOGIC AS INVITE
       inputDate.setHours(23, 59, 59, 999);
 
-      await user.findOneAndUpdate(
+      const updatedUser = await user.findOneAndUpdate(
         { _id: req.body.userId, isDeleted: false },
         { $set: { validTill: inputDate } }
       );
+
+      if (!updatedUser) {
+        res.status(400);
+        throw new Error('User does not exists or deleted.');
+      }
+
+      await activity.create({
+        adminId: req.user._id,
+        adminName: req.user.name,
+        adminEmail: req.user.email,
+        action: `Subscription Renewed`,
+        targetName: updatedUser.name,
+        targetDetails: updatedUser.email,
+      });
 
       res.status(200).json({
         message: 'User subscription renewed',
@@ -230,6 +262,15 @@ export default class UserController {
         res.status(400);
         throw new Error('User does not exists or deleted.');
       }
+
+      await activity.create({
+        adminId: req.user._id,
+        adminName: req.user.name,
+        adminEmail: req.user.email,
+        action: `User Deleted`,
+        targetName: updatedUser.name,
+        targetDetails: updatedUser.email,
+      });
 
       res.status(200).json({
         message: 'User deleted successfully',
