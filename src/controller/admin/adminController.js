@@ -168,4 +168,54 @@ export default class AdminController {
       next(err);
     }
   };
+
+  exportLogs = async (req, res, next) => {
+    try {
+      const { search = '', action = 'all', time = 'all' } = req.body;
+
+      const query = {};
+
+      // 1. Apply Search Filter
+      if (search) {
+        const safeSearch = escapeRegex(search);
+        query.$or = [
+          { adminName: { $regex: safeSearch, $options: 'i' } },
+          { adminEmail: { $regex: safeSearch, $options: 'i' } },
+          { targetName: { $regex: safeSearch, $options: 'i' } },
+        ];
+      }
+
+      // 2. Apply Action Filter
+      if (action && action !== 'all') {
+        query.action = action;
+      }
+
+      // 3. Apply Time Filter
+      if (time && time !== 'all') {
+        const targetDate = new Date();
+        if (time === '7days') {
+          targetDate.setDate(targetDate.getDate() - 7);
+        } else if (time === '30days') {
+          targetDate.setDate(targetDate.getDate() - 30);
+        } else if (time === '1year') {
+          targetDate.setFullYear(targetDate.getFullYear() - 1);
+        }
+        query.createdAt = { $gte: targetDate };
+      }
+
+      // Fetch all matching logs without pagination
+      const activities = await activity
+        .find(query)
+        .sort({ createdAt: -1 })
+        .lean();
+
+      res.status(200).json({
+        message: 'Logs exported successfully.',
+        success: true,
+        data: activities,
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
 }
