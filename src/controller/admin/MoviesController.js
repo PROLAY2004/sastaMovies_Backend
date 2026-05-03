@@ -1,5 +1,6 @@
 import content from '../../models/contentModel.js';
 import bucket from '../../models/bucketModel.js';
+import activity from '../../models/activityModel.js';
 import FetchContent from '../../utils/FetchContent.js';
 import escapeRegex from '../../utils/searchRegex.js';
 
@@ -8,7 +9,12 @@ const imdbFetch = new FetchContent();
 export default class MoviesController {
   addMovie = async (req, res, next) => {
     try {
+      // Step 1: Fetch IMDb data
       const response = await imdbFetch.fetchMovie(req.body.imdbLink);
+
+      const movieData = response?.movieData?.data || {};
+
+      // Step 2: Check if movie already exists
       const isExists = await content.findOne({
         imdbId: response.imdbId,
         isDeleted: false,
@@ -19,32 +25,52 @@ export default class MoviesController {
         throw new Error('Movie already exists.');
       }
 
+      // Step 3: Prepare cleaned data (avoid runtime errors)
+      const cast = movieData.Actors ? movieData.Actors.split(', ') : [];
+      const genre = movieData.Genre ? movieData.Genre.split(', ') : [];
+
+      // Step 4: Create bucket (dependency for content)
       const bucketInstance = await bucket.create({
         imdbId: response.imdbId || '',
         baseUrl: req.body.baseUrl,
         chunkCount: req.body.totalChunks,
         size_byte: req.body.totalSize,
         subtitleUrl: req.body.subtitleLink,
-        mimeType: req.body.mimeType.toLowerCase(),
+        mimeType: req.body.mimeType?.toLowerCase() || '',
       });
 
-      await content.create({
-        imdbId: response.imdbId || '',
-        title: response.movieData.data.Title || '',
-        description: response.movieData.data.Plot || '',
-        release: response.movieData.data.Released || '',
-        cast: response.movieData.data.Actors.split(', ') || '',
-        runtime: response.movieData.data.Runtime || '0 min',
-        rating: parseFloat(response.movieData.data.imdbRating) || 0,
-        genre: response.movieData.data.Genre.split(', ') || '',
-        posterUrl: {
-          horizontal: req.body.posterLink,
-          vertical: response.movieData.data.Poster || '',
-        },
-        contentType: 'movie',
-        contentIds: [[bucketInstance._id]],
-      });
+      // Step 5: Run independent DB operations in parallel
+      await Promise.all([
+        content.create({
+          imdbId: response.imdbId || '',
+          title: movieData.Title || '',
+          description: movieData.Plot || '',
+          release: movieData.Released || '',
+          cast,
+          runtime: movieData.Runtime || '0 min',
+          rating: parseFloat(movieData.imdbRating) || 0,
+          genre,
+          posterUrl: {
+            horizontal: req.body.posterLink,
+            vertical: movieData.Poster || '',
+          },
+          contentType: 'movie',
+          contentIds: [[bucketInstance._id]],
+        }),
 
+        activity.create({
+          adminId: req.user._id,
+          adminName: req.user.name,
+          adminEmail: req.user.email,
+          action: 'Movie Uploaded',
+          targetName:
+            `${movieData.Title} (${movieData.Released.slice(-4)})` ||
+            'Unknown Content',
+          targetDetails: req.body.imdbLink,
+        }),
+      ]);
+
+      // Step 6: Response
       res.status(200).json({
         message: 'Movie added successfully.',
         success: true,
@@ -199,17 +225,30 @@ export default class MoviesController {
         throw new Error('Movie not found.');
       }
 
-      await bucket.findByIdAndUpdate(
-        { _id: updatedContent.contentIds[0] },
-        {
-          imdbId: response.imdbId || '',
-          baseUrl: req.body.baseUrl,
-          chunkCount: req.body.totalChunks,
-          size_byte: req.body.totalSize,
-          subtitleUrl: req.body.subtitleLink,
-          mimeType: req.body.mimeType.toLowerCase(),
-        }
-      );
+      await Promise.all([
+        bucket.findByIdAndUpdate(
+          { _id: updatedContent.contentIds[0] },
+          {
+            imdbId: response.imdbId || '',
+            baseUrl: req.body.baseUrl,
+            chunkCount: req.body.totalChunks,
+            size_byte: req.body.totalSize,
+            subtitleUrl: req.body.subtitleLink,
+            mimeType: req.body.mimeType?.toLowerCase() || '',
+          }
+        ),
+
+        activity.create({
+          adminId: req.user._id,
+          adminName: req.user.name,
+          adminEmail: req.user.email,
+          action: 'Movie Edited',
+          targetName:
+            `${response.movieData.data.Title} (${response.movieData.data.Released.slice(-4)})` ||
+            'Unknown Content',
+          targetDetails: req.body.imdbLink,
+        }),
+      ]);
 
       res.status(200).json({
         message: 'Movie updated successfully.',

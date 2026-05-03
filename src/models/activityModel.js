@@ -23,7 +23,12 @@ const activitySchema = new mongoose.Schema(
     targetName: {
       type: String,
       required: true,
-      // Examples: 'Tumbbad', 'john.doe@gmail.com'
+      // Examples: 'Tumbbad', 'Prolay Halder'
+    },
+    targetDetails: {
+      type: String,
+      required: true,
+      // Examples: 'Imdb link', 'john.doe@gmail.com'
     },
   },
   {

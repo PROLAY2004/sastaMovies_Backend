@@ -29,4 +29,11 @@ export default class FetchContent {
 
     return { imdbId: seriesData.data.imdbID, seriesData };
   };
+
+  fetchContent = async (imdbId) => {
+    const contentData = await axios.get(
+      `https://www.omdbapi.com/?i=${imdbId}&apikey=${configuration.IMDB_API_KEY}`
+    );
+    return contentData.data;
+  };
 }

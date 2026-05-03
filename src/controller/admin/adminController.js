@@ -2,6 +2,9 @@ import user from '../../models/userModel.js';
 import activity from '../../models/activityModel.js';
 import content from '../../models/contentModel.js';
 import escapeRegex from '../../utils/searchRegex.js';
+import FetchContent from '../../utils/FetchContent.js';
+
+const imdb = new FetchContent();
 
 export default class AdminController {
   dashboard = async (req, res, next) => {
@@ -51,10 +54,11 @@ export default class AdminController {
         throw new Error('ContentId is Required');
       }
 
+      // Step 1: Soft delete content
       const updatedContent = await content.findOneAndUpdate(
         { _id: req.body.contentId, isDeleted: false },
         { $set: { isDeleted: true } },
-        { new: true } // Returns the modified document
+        { new: true }
       );
 
       if (!updatedContent) {
@@ -62,8 +66,29 @@ export default class AdminController {
         throw new Error('Content not available or deleted.');
       }
 
+      // Step 2: Run IMDb fetch + activity creation in parallel
+      const [contentData] = await Promise.all([
+        imdb.fetchContent(updatedContent.imdbId),
+      ]);
+
+      // Step 3: Activity log (depends on IMDb data)
+      await activity.create({
+        adminId: req.user._id,
+        adminName: req.user.name,
+        adminEmail: req.user.email,
+        action: `${contentData?.Type === 'movie' ? 'Movie' : 'Series'} Deleted`,
+        targetName:
+          contentData?.Title && contentData?.Released
+            ? `${contentData.Title} (${contentData.Released.slice(-4)})`
+            : 'Unknown Content',
+        targetDetails: `https://www.imdb.com/title/${updatedContent.imdbId}/`,
+      });
+
+      // Step 4: Response
       res.status(200).json({
-        message: 'Content deleted successfully',
+        message: `${
+          contentData?.Type === 'movie' ? 'Movie' : 'Series'
+        } deleted successfully`,
         success: true,
       });
     } catch (err) {
@@ -79,7 +104,7 @@ export default class AdminController {
         action = 'all',
         time = 'all',
         page = 1,
-        limit = 10, // Defaulting to 10 for logs is usually better
+        limit = 5, // Defaulting to 10 for logs is usually better
       } = req.body;
 
       const query = {};
