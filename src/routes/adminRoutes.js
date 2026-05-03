@@ -2,13 +2,18 @@ import express from 'express';
 
 import AdminController from '../controller/admin/AdminController.js';
 import AuthController from '../controller/admin/AuthController.js';
+import MoviesController from '../controller/admin/MoviesController.js';
+
 import UserValidation from '../validations/middleware/UserValidation.js';
 import ContentValidation from '../validations/middleware/ContentValidation.js';
 
 const admin = new AdminController();
 const auth = new AuthController();
+const movie = new MoviesController();
+
 const userValidation = new UserValidation();
 const contentValidation = new ContentValidation();
+
 const router = express.Router();
 
 //dashboard routes
@@ -21,16 +26,15 @@ router.patch('/users', admin.changeStatus);
 router.put('/users', admin.renewUser);
 
 //movie routes
-router.post('/movie', contentValidation.addMovieRequest, admin.addMovie); // take imdb, description, poster_link, base_url, total_chunks, total_size, mime_type
-router.post('/fetch-movie', admin.fetchMovie); // search query, filter data, pagination data
-router.put('/movie', contentValidation.editMovieRequest, admin.editMovie); // take contentId, imdb, description, poster_link, base_url, total_chunks, total_size, mime_type
+router.post('/movie', contentValidation.addMovieRequest, movie.addMovie); // take imdb, description, poster_link, base_url, total_chunks, total_size, mime_type
+router.post('/fetch-movie', movie.fetchMovie); // search query, filter data, pagination data
+router.put('/movie', contentValidation.editMovieRequest, movie.editMovie); // take contentId, imdb, description, poster_link, base_url, total_chunks, total_size, mime_type
 
 //series routes
 router.post('/series', contentValidation.addSeriesRequest, admin.addSeries); // imdb link, poster url, array of seasons
 router.post('/fetch-series', admin.fetchSeries);
 router.put('/series', contentValidation.editSeriesRequest, admin.editSeries);
 
-router.delete('/content', admin.deleteMovie); // take only contentId in body
-
+router.delete('/content', admin.deleteContent); // take only contentId in body
 
 export default router;
