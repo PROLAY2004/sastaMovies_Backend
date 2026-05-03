@@ -4,6 +4,7 @@ import AdminController from '../controller/admin/AdminController.js';
 import AuthController from '../controller/admin/AuthController.js';
 import MoviesController from '../controller/admin/MoviesController.js';
 import SeriesController from '../controller/admin/SeriesController.js';
+import UserController from '../controller/admin/UserController.js';
 
 import UserValidation from '../validations/middleware/UserValidation.js';
 import ContentValidation from '../validations/middleware/ContentValidation.js';
@@ -12,6 +13,7 @@ const admin = new AdminController();
 const auth = new AuthController();
 const movie = new MoviesController();
 const series = new SeriesController();
+const user = new UserController();
 
 const userValidation = new UserValidation();
 const contentValidation = new ContentValidation();
@@ -21,11 +23,11 @@ const router = express.Router();
 //dashboard routes
 router.get('/dashboard', admin.dashboard);
 
-router.post('/invite', userValidation.inviteRequest, admin.invite); // take name, email, number_of_days
-router.post('/users', admin.fetchUsers);
-router.delete('/users', admin.deleteUser);
-router.patch('/users', admin.changeStatus);
-router.put('/users', admin.renewUser);
+router.post('/invite', userValidation.inviteRequest, user.invite); // take name, email, number_of_days
+router.post('/users', user.fetchUsers);
+router.delete('/users', user.deleteUser);
+router.patch('/users', user.changeStatus);
+router.put('/users', user.renewUser);
 
 //movie routes
 router.post('/movie', contentValidation.addMovieRequest, movie.addMovie); // take imdb, description, poster_link, base_url, total_chunks, total_size, mime_type
