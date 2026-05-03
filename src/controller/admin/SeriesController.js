@@ -1,5 +1,6 @@
 import content from '../../models/contentModel.js';
 import bucket from '../../models/bucketModel.js';
+import activity from '../../models/activityModel.js';
 import FetchContent from '../../utils/FetchContent.js';
 import escapeRegex from '../../utils/searchRegex.js';
 
@@ -9,9 +10,7 @@ export default class SeriesController {
   addSeries = async (req, res, next) => {
     try {
       const { imdbLink, posterLink, seasons } = req.body;
-
       const response = await imdbFetch.fetchSeries(imdbLink);
-
       const isExists = await content.findOne({
         imdbId: response.imdbId,
         isDeleted: false,
@@ -50,23 +49,35 @@ export default class SeriesController {
         contentIds[sIndex].push(doc._id);
       });
 
-      // 📦 4. Create content
-      await content.create({
-        imdbId: response.imdbId || '',
-        title: response.seriesData.data.Title || '',
-        description: response.seriesData.data.Plot || '',
-        release: response.seriesData.data.Released || '',
-        cast: response.seriesData.data.Actors.split(', ') || '',
-        runtime: response.seriesData.data.Runtime || '0 min',
-        rating: parseFloat(response.seriesData.data.imdbRating) || 0,
-        genre: response.seriesData.data.Genre.split(', ') || '',
-        posterUrl: {
-          horizontal: posterLink,
-          vertical: response.seriesData.data.Poster || '',
-        },
-        contentType: 'series',
-        contentIds,
-      });
+      await Promise.all([
+        content.create({
+          imdbId: response.imdbId || '',
+          title: response.seriesData.data.Title || '',
+          description: response.seriesData.data.Plot || '',
+          release: response.seriesData.data.Released || '',
+          cast: response.seriesData.data.Actors.split(', ') || '',
+          runtime: response.seriesData.data.Runtime || '0 min',
+          rating: parseFloat(response.seriesData.data.imdbRating) || 0,
+          genre: response.seriesData.data.Genre.split(', ') || '',
+          posterUrl: {
+            horizontal: posterLink,
+            vertical: response.seriesData.data.Poster || '',
+          },
+          contentType: 'series',
+          contentIds,
+        }),
+
+        activity.create({
+          adminId: req.user._id,
+          adminName: req.user.name,
+          adminEmail: req.user.email,
+          action: 'Series Uploaded',
+          targetName:
+            `${response.seriesData.data.Title} (${response.seriesData.data.Released.slice(-4)})` ||
+            'Unknown Content',
+          targetDetails: imdbLink,
+        }),
+      ]);
 
       res.status(200).json({
         message: 'Series added successfully.',
@@ -319,6 +330,17 @@ export default class SeriesController {
           },
           { new: true }
         ),
+
+        activity.create({
+          adminId: req.user._id,
+          adminName: req.user.name,
+          adminEmail: req.user.email,
+          action: 'Series Edited',
+          targetName:
+            `${response.seriesData.data.Title} (${response.seriesData.data.Released.slice(-4)})` ||
+            'Unknown Content',
+          targetDetails: imdbLink,
+        }),
       ]);
 
       res.status(200).json({
