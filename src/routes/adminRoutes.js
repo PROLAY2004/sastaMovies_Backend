@@ -3,6 +3,7 @@ import express from 'express';
 import AdminController from '../controller/admin/AdminController.js';
 import AuthController from '../controller/admin/AuthController.js';
 import MoviesController from '../controller/admin/MoviesController.js';
+import SeriesController from '../controller/admin/SeriesController.js';
 
 import UserValidation from '../validations/middleware/UserValidation.js';
 import ContentValidation from '../validations/middleware/ContentValidation.js';
@@ -10,6 +11,7 @@ import ContentValidation from '../validations/middleware/ContentValidation.js';
 const admin = new AdminController();
 const auth = new AuthController();
 const movie = new MoviesController();
+const series = new SeriesController();
 
 const userValidation = new UserValidation();
 const contentValidation = new ContentValidation();
@@ -31,9 +33,9 @@ router.post('/fetch-movie', movie.fetchMovie); // search query, filter data, pag
 router.put('/movie', contentValidation.editMovieRequest, movie.editMovie); // take contentId, imdb, description, poster_link, base_url, total_chunks, total_size, mime_type
 
 //series routes
-router.post('/series', contentValidation.addSeriesRequest, admin.addSeries); // imdb link, poster url, array of seasons
-router.post('/fetch-series', admin.fetchSeries);
-router.put('/series', contentValidation.editSeriesRequest, admin.editSeries);
+router.post('/series', contentValidation.addSeriesRequest, series.addSeries); // imdb link, poster url, array of seasons
+router.post('/fetch-series', series.fetchSeries);
+router.put('/series', contentValidation.editSeriesRequest, series.editSeries);
 
 router.delete('/content', admin.deleteContent); // take only contentId in body
 

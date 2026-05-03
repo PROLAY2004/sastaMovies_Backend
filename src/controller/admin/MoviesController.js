@@ -1,6 +1,7 @@
 import content from '../../models/contentModel.js';
 import bucket from '../../models/bucketModel.js';
 import FetchContent from '../../utils/FetchContent.js';
+import escapeRegex from '../../utils/searchRegex.js';
 
 const imdbFetch = new FetchContent();
 
@@ -53,10 +54,6 @@ export default class MoviesController {
     }
   };
 
-  escapeRegex = (string) => {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  };
-
   // fetchMovie Controller
   fetchMovie = async (req, res, next) => {
     try {
@@ -73,7 +70,7 @@ export default class MoviesController {
 
       // 2. Apply Search Filter (Case-insensitive)
       if (search) {
-        const safeSearch = this.escapeRegex(search); // Escape the special characters first
+        const safeSearch = escapeRegex(search); // Escape the special characters first
         query.title = { $regex: safeSearch, $options: 'i' };
       }
 
