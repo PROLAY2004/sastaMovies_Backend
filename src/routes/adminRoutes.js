@@ -22,6 +22,7 @@ const router = express.Router();
 
 //dashboard routes
 router.get('/dashboard', admin.dashboard);
+router.post('/activity', admin.fetchActivity);
 
 router.post('/invite', userValidation.inviteRequest, user.invite); // take name, email, number_of_days
 router.post('/users', user.fetchUsers);

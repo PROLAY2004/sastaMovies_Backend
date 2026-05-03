@@ -1,13 +1,7 @@
 import user from '../../models/userModel.js';
+import Activity from '../../models/activityModel.js';
 import content from '../../models/contentModel.js';
-import bucket from '../../models/bucketModel.js';
-import DateFormatter from '../../utils/DateFormatter.js';
-import SendEmailService from '../../services/sendMailService.js';
-import FetchContent from '../../utils/FetchContent.js';
-
-const mailer = new SendEmailService();
-const format = new DateFormatter();
-const imdbFetch = new FetchContent();
+import escapeRegex from '../../utils/searchRegex.js';
 
 export default class AdminController {
   dashboard = async (req, res, next) => {
@@ -76,4 +70,76 @@ export default class AdminController {
       next(err);
     }
   };
+
+
+
+// Helper to escape regex (if not already globally defined in your project)
+fetchActivity = async (req, res, next) => {
+  try {
+    const {
+      search = '',
+      action = 'all',
+      time = 'all',
+      page = 1,
+      limit = 10, // Defaulting to 10 for logs is usually better
+    } = req.body;
+
+    const query = {};
+
+    // 1. Apply Search Filter (matches Admin Name, Email, or Target Name)
+    if (search) {
+      const safeSearch = escapeRegex(search);
+      query.$or = [
+        { adminName: { $regex: safeSearch, $options: 'i' } },
+        { adminEmail: { $regex: safeSearch, $options: 'i' } },
+        { targetName: { $regex: safeSearch, $options: 'i' } },
+      ];
+    }
+
+    // 2. Apply Action Filter
+    if (action && action !== 'all') {
+      query.action = action;
+    }
+
+    // 3. Apply Time Filter
+    if (time && time !== 'all') {
+      const targetDate = new Date();
+      if (time === '7days') {
+        targetDate.setDate(targetDate.getDate() - 7);
+      } else if (time === '30days') {
+        targetDate.setDate(targetDate.getDate() - 30);
+      } else if (time === '1year') {
+        targetDate.setFullYear(targetDate.getFullYear() - 1);
+      }
+      query.createdAt = { $gte: targetDate };
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // 4. Run queries in parallel
+    const [activities, totalCount, allActions] = await Promise.all([
+      Activity.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean(),
+      Activity.countDocuments(query),
+      Activity.distinct('action'), // Get all unique action types for the dropdown
+    ]);
+
+    res.status(200).json({
+      message: 'Activity logs fetched successfully.',
+      success: true,
+      data: {
+        activities,
+        allActions, // Send dynamic actions to populate dropdown
+        totalPages: Math.ceil(totalCount / parseInt(limit)) || 1,
+        currentPage: parseInt(page),
+        totalLogs: totalCount,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 }
