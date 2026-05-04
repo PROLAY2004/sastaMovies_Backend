@@ -5,7 +5,7 @@ export default class AccessValidation {
     try {
       const userPermission = req.user.permission;
 
-      if (!userPermission.includes('movies')) {
+      if (!req.user.isSuperAdmin && !userPermission.includes('movies')) {
         res.status(400);
 
         throw new Error('Admin permission denied.');
@@ -21,7 +21,7 @@ export default class AccessValidation {
     try {
       const userPermission = req.user.permission;
 
-      if (!userPermission.includes('series')) {
+      if (!req.user.isSuperAdmin && !userPermission.includes('series')) {
         res.status(400);
 
         throw new Error('Admin permission denied.');
@@ -37,7 +37,7 @@ export default class AccessValidation {
     try {
       const userPermission = req.user.permission;
 
-      if (!userPermission.includes('users')) {
+      if (!req.user.isSuperAdmin && !userPermission.includes('users')) {
         res.status(400);
 
         throw new Error('Admin permission denied.');
@@ -62,6 +62,7 @@ export default class AccessValidation {
       const contentDetails = await content.findOne({ _id: contentId });
 
       if (
+        !req.user.isSuperAdmin &&
         contentDetails.contentType === 'movie' &&
         !userPermission.includes('movies')
       ) {
@@ -69,6 +70,7 @@ export default class AccessValidation {
 
         throw new Error('Admin permission denied.');
       } else if (
+        !req.user.isSuperAdmin &&
         contentDetails.contentType === 'series' &&
         !userPermission.includes('series')
       ) {

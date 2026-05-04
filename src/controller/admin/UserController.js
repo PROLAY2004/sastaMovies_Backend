@@ -218,9 +218,15 @@ export default class UserController {
       // ✅ SAME LOGIC AS INVITE
       inputDate.setHours(23, 59, 59, 999);
 
+      const userData = await user.findOne({
+        _id: req.body.userId,
+        isDeleted: false,
+      });
+
       const updatedUser = await user.findOneAndUpdate(
         { _id: req.body.userId, isDeleted: false },
-        { $set: { validTill: inputDate } }
+        { $set: { validTill: inputDate } },
+        { new: true }
       );
 
       if (!updatedUser) {
@@ -236,6 +242,13 @@ export default class UserController {
         targetName: updatedUser.name,
         targetDetails: updatedUser.email,
       });
+
+      mailer.renewalMailer(
+        updatedUser.name,
+        updatedUser.email,
+        format.dateAndTimeTemplate(userData.validTill),
+        format.dateTemplate(updatedUser.validTill)
+      );
 
       res.status(200).json({
         message: 'User subscription renewed',

@@ -46,6 +46,22 @@ export default class SendEmailService {
     }
   };
 
+  renewalMailer = async (name, email, previousExpiryDate, expireDate) => {
+    try {
+      const mailResponse = await this.mailSender(
+        email,
+        'Subscription extented',
+        template.renewalTemplate(name, previousExpiryDate, expireDate)
+      );
+
+      if (mailResponse instanceof Error) {
+        throw mailResponse;
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
   otpMailer = async (email, otp, userType) => {
     try {
       let mailResponse;

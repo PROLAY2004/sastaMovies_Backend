@@ -41,6 +41,12 @@ const usrSchema = new mongoose.Schema(
       default: null,
     },
 
+    isSuperAdmin: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
+
     permission: {
       type: [String],
       required: true,
