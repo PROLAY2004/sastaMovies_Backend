@@ -136,6 +136,7 @@ export default class UserController {
         success: true,
         data: {
           users,
+          adminDetails: req.user,
           totalPages: Math.ceil(totalCount / parseInt(limit)) || 1,
           currentPage: parseInt(page),
           totalUsers: totalCount,

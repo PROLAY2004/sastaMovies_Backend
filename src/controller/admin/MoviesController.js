@@ -173,6 +173,7 @@ export default class MoviesController {
         message: 'Movie details fetched successfully.',
         success: true,
         data: {
+          adminDetails: req.user,
           movies: mergedMovies,
           allGenres,
           allYears,

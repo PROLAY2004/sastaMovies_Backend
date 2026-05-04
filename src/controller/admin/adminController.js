@@ -36,6 +36,7 @@ export default class AdminController {
         message: 'Dashboard data fetched successfully.',
         success: true,
         data: {
+          adminDetails : req.user,
           contents,
           userCount,
           movieCount,
@@ -153,6 +154,7 @@ export default class AdminController {
         success: true,
         data: {
           activities,
+          adminDetails:req.user,
           allActions, // Send dynamic actions to populate dropdown
           totalPages: Math.ceil(totalCount / parseInt(limit)) || 1,
           currentPage: parseInt(page),

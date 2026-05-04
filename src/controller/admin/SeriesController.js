@@ -190,6 +190,7 @@ export default class SeriesController {
         success: true,
         data: {
           series: formattedSeries, // Send the newly structured series
+          adminDetails: req.user,
           allGenres,
           allYears,
           totalPages: Math.ceil(totalCount / parseInt(limit)) || 1,
