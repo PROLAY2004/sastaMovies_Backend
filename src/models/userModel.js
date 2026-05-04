@@ -41,6 +41,12 @@ const usrSchema = new mongoose.Schema(
       default: null,
     },
 
+    permission: {
+      type: [String],
+      required: true,
+      default: [],
+    },
+
     savedContents: {
       type: [String],
       required: true,

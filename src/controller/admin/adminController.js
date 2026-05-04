@@ -49,11 +49,6 @@ export default class AdminController {
 
   deleteContent = async (req, res, next) => {
     try {
-      if (!req.body.contentId) {
-        res.status(400);
-        throw new Error('ContentId is Required');
-      }
-
       // Step 1: Soft delete content
       const updatedContent = await content.findOneAndUpdate(
         { _id: req.body.contentId, isDeleted: false },

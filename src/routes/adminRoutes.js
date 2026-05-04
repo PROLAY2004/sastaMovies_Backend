@@ -8,12 +8,14 @@ import UserController from '../controller/admin/UserController.js';
 
 import UserValidation from '../validations/middleware/UserValidation.js';
 import ContentValidation from '../validations/middleware/ContentValidation.js';
+import AccessValidation from '../validations/middleware/AccessValidation.js';
 
 const admin = new AdminController();
 const auth = new AuthController();
 const movie = new MoviesController();
 const series = new SeriesController();
 const user = new UserController();
+const access = new AccessValidation();
 
 const userValidation = new UserValidation();
 const contentValidation = new ContentValidation();
@@ -25,22 +27,47 @@ router.get('/dashboard', admin.dashboard);
 router.post('/activity', admin.fetchActivity);
 router.post('/export', admin.exportLogs);
 
-router.post('/invite', userValidation.inviteRequest, user.invite); // take name, email, number_of_days
+router.post(
+  '/invite',
+  access.userAccess,
+  userValidation.inviteRequest,
+  user.invite
+); // take name, email, number_of_days
 router.post('/users', user.fetchUsers);
-router.delete('/users', user.deleteUser);
-router.patch('/users', user.changeStatus);
-router.put('/users', user.renewUser);
+router.delete('/users', access.userAccess, user.deleteUser);
+router.patch('/users', access.userAccess, user.changeStatus);
+router.put('/users', access.userAccess, user.renewUser);
 
 //movie routes
-router.post('/movie', contentValidation.addMovieRequest, movie.addMovie); // take imdb, description, poster_link, base_url, total_chunks, total_size, mime_type
+router.post(
+  '/movie',
+  access.movieAccess,
+  contentValidation.addMovieRequest,
+  movie.addMovie
+); // take imdb, description, poster_link, base_url, total_chunks, total_size, mime_type
 router.post('/fetch-movie', movie.fetchMovie); // search query, filter data, pagination data
-router.put('/movie', contentValidation.editMovieRequest, movie.editMovie); // take contentId, imdb, description, poster_link, base_url, total_chunks, total_size, mime_type
+router.put(
+  '/movie',
+  access.movieAccess,
+  contentValidation.editMovieRequest,
+  movie.editMovie
+); // take contentId, imdb, description, poster_link, base_url, total_chunks, total_size, mime_type
 
 //series routes
-router.post('/series', contentValidation.addSeriesRequest, series.addSeries); // imdb link, poster url, array of seasons
+router.post(
+  '/series',
+  access.seriesAccess,
+  contentValidation.addSeriesRequest,
+  series.addSeries
+); // imdb link, poster url, array of seasons
 router.post('/fetch-series', series.fetchSeries);
-router.put('/series', contentValidation.editSeriesRequest, series.editSeries);
+router.put(
+  '/series',
+  access.seriesAccess,
+  contentValidation.editSeriesRequest,
+  series.editSeries
+);
 
-router.delete('/content', admin.deleteContent); // take only contentId in body
+router.delete('/content', access.deleteContentAccess, admin.deleteContent); // take only contentId in body
 
 export default router;
