@@ -266,9 +266,16 @@ export default class UserController {
         throw new Error('UserId is Required');
       }
 
+      console.log(req.body.permissions);
+
+      if (!req.body.permissions.length) {
+        res.status(400);
+        throw new Error('Admin should have atleast one permission');
+      }
+
       const updatedUser = await user.findOneAndUpdate(
         { _id: req.body.userId, isDeleted: false },
-        { $set: { isSuperAdmin: true } },
+        { $set: { role: 'admin', permission: req.body.permissions } },
         { new: true } // Returns the modified document
       );
 
