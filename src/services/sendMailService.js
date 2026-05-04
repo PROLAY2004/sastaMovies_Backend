@@ -62,6 +62,22 @@ export default class SendEmailService {
     }
   };
 
+  upgradeMailer = async (name, email) => {
+    try {
+      const mailResponse = await this.mailSender(
+        email,
+        'User Upgraded to Admin',
+        template.adminUpgradeTemplate(name)
+      );
+
+      if (mailResponse instanceof Error) {
+        throw mailResponse;
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
   otpMailer = async (email, otp, userType) => {
     try {
       let mailResponse;

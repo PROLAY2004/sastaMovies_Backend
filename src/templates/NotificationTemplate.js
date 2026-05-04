@@ -138,4 +138,72 @@ export default class NotificationTemplate {
       </body>
       </html>`;
   };
+
+  adminUpgradeTemplate = (userName) => {
+    return `<!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Admin Access Granted</title>
+
+        <style>
+          ${style.activationStyle()}
+        </style>
+      </head>
+
+      <body>
+        <div class="container">
+
+          <!-- Logo -->
+          <div class="logo">
+            SASTA <span>MOVIES</span>
+          </div>
+
+          <!-- Title -->
+          <div class="title">
+            🛡️ Admin Access Granted
+          </div>
+
+          <!-- Subtitle -->
+          <div class="subtitle">
+            Hello ${userName}, your account has been upgraded with administrator privileges.
+          </div>
+
+          <!-- Status Box -->
+          <div class="status-box">
+            <div class="badge">ADMIN ROLE</div>
+
+            <div class="plan">
+              Elevated Permissions Enabled
+            </div>
+
+            <div class="expiry">
+              You now have access to manage content, users, and system settings.
+            </div>
+          </div>
+
+          <!-- CTA -->
+          <div style="text-align:center;">
+            <a href="${configuration.ADMIN_URL}" class="btn">
+              Go to Admin Panel ⚙️
+            </a>
+          </div>
+
+          <!-- Divider -->
+          <div class="line"></div>
+
+          <!-- Footer -->
+          <div class="footer-text">
+            With great power comes responsibility. Please ensure actions are performed carefully within the admin panel.
+          </div>
+
+          <div class="brand-footer">
+            © 2026 <span>Sasta Movies</span>
+          </div>
+
+        </div>
+      </body>
+      </html>`;
+  };
 }

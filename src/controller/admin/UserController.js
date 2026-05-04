@@ -286,6 +286,8 @@ export default class UserController {
         targetDetails: updatedUser.email,
       });
 
+      mailer.upgradeMailer(updatedUser.name, updatedUser.email);
+
       res.status(200).json({
         message: 'User upgraded successfully',
         success: true,
