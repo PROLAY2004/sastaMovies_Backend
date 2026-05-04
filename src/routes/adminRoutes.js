@@ -9,6 +9,7 @@ import UserController from '../controller/admin/UserController.js';
 import UserValidation from '../validations/middleware/UserValidation.js';
 import ContentValidation from '../validations/middleware/ContentValidation.js';
 import AccessValidation from '../validations/middleware/AccessValidation.js';
+import isSuperAdmin from '../validations/middleware/checkSuperAdmin.js';
 
 const admin = new AdminController();
 const auth = new AuthController();
@@ -37,6 +38,7 @@ router.post('/users', user.fetchUsers);
 router.delete('/users', access.userAccess, user.deleteUser);
 router.patch('/users', access.userAccess, user.changeStatus);
 router.put('/users', access.userAccess, user.renewUser);
+router.post('/upgrade', access.userAccess, isSuperAdmin, user.makeAdmin);
 
 //movie routes
 router.post(

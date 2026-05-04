@@ -259,6 +259,42 @@ export default class UserController {
     }
   };
 
+  makeAdmin = async (req, res, next) => {
+    try {
+      if (!req.body.userId) {
+        res.status(400);
+        throw new Error('UserId is Required');
+      }
+
+      const updatedUser = await user.findOneAndUpdate(
+        { _id: req.body.userId, isDeleted: false },
+        { $set: { isSuperAdmin: true } },
+        { new: true } // Returns the modified document
+      );
+
+      if (!updatedUser) {
+        res.status(400);
+        throw new Error('User does not exists or deleted.');
+      }
+
+      await activity.create({
+        adminId: req.user._id,
+        adminName: req.user.name,
+        adminEmail: req.user.email,
+        action: `User Upgraded`,
+        targetName: updatedUser.name,
+        targetDetails: updatedUser.email,
+      });
+
+      res.status(200).json({
+        message: 'User upgraded successfully',
+        success: true,
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
   deleteUser = async (req, res, next) => {
     try {
       if (!req.body.userId) {
