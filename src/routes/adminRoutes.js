@@ -5,6 +5,7 @@ import AuthController from '../controller/admin/AuthController.js';
 import MoviesController from '../controller/admin/MoviesController.js';
 import SeriesController from '../controller/admin/SeriesController.js';
 import UserController from '../controller/admin/UserController.js';
+import AdminManagementController from '../controller/admin/AdminManagementController.js';
 
 import UserValidation from '../validations/middleware/UserValidation.js';
 import ContentValidation from '../validations/middleware/ContentValidation.js';
@@ -16,8 +17,9 @@ const auth = new AuthController();
 const movie = new MoviesController();
 const series = new SeriesController();
 const user = new UserController();
-const access = new AccessValidation();
+const manage = new AdminManagementController();
 
+const access = new AccessValidation();
 const userValidation = new UserValidation();
 const contentValidation = new ContentValidation();
 
@@ -28,6 +30,7 @@ router.get('/dashboard', admin.dashboard);
 router.post('/activity', admin.fetchActivity);
 router.post('/export', admin.exportLogs);
 
+//user routes
 router.post(
   '/invite',
   access.userAccess,
@@ -39,6 +42,14 @@ router.delete('/users', access.userAccess, user.deleteUser);
 router.patch('/users', access.userAccess, user.changeStatus);
 router.put('/users', access.userAccess, user.renewUser);
 router.post('/upgrade', access.userAccess, isSuperAdmin, user.makeAdmin);
+
+//admin management routes
+router.post('/fetchAdmins', isSuperAdmin, manage.fetchAdmins);
+router.put('/permissions', isSuperAdmin, manage.updatePermissions);
+router.post('/downgrade', isSuperAdmin, manage.downgradeAdmin);
+router.delete('/delete', isSuperAdmin, manage.deleteAdmin);
+router.patch('/status', isSuperAdmin, manage.changeStatus);
+router.post('/add', isSuperAdmin, manage.addAdmin);
 
 //movie routes
 router.post(

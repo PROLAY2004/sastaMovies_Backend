@@ -6,22 +6,28 @@ export default class TokenValidation {
   accessTokenValidator = async (req, res, next) => {
     try {
       const decoded = verifyToken(req, res, configuration.ACCESS_SECRET);
-      const appUser = await user.findOne({ _id: decoded.userId });
+      const appUser = await user.findOne({
+        _id: decoded.userId,
+      });
 
       if (!appUser) {
         res.status(404);
-        throw new Error('User does not exists.');
-      }
-
-      if (appUser.isBlocked) {
-        res.status(401);
-        throw new Error('User Blocked by admin.');
+        throw new Error('User does not exists');
       }
 
       if (appUser.isDeleted) {
         res.status(401);
 
         throw new Error('User deleted. Logging out!');
+      }
+
+      if (
+        appUser.isBlocked &&
+        appUser.role !== 'admin' &&
+        !appUser.isSuperAdmin
+      ) {
+        res.status(401);
+        throw new Error('User Blocked by admin.');
       }
 
       const expiryTime = new Date(appUser.validTill);
@@ -48,17 +54,29 @@ export default class TokenValidation {
       const decoded = verifyToken(req, res, configuration.ACCESS_SECRET);
       const appUser = await user.findOne({ _id: decoded.userId });
 
+      if (!appUser) {
+        res.status(404);
+        throw new Error('User does not exists');
+      }
+
+      if (appUser.isDeleted) {
+        res.status(401);
+        throw new Error('User deleted. Logging out!');
+      }
+
       if (appUser) {
-        if (appUser.role !== 'admin') {
-          res.status(403);
+        if (!appUser.isSuperAdmin) {
+          if (appUser.role !== 'admin') {
+            res.status(403);
 
-          throw new Error('Access Denied. Admins only.');
-        }
+            throw new Error('Access Denied. Admins only.');
+          }
 
-        if (appUser.isBlocked || appUser.isDeleted) {
-          res.status(401);
+          if (appUser.isBlocked || appUser.isDeleted) {
+            res.status(401);
 
-          throw new Error('User Restricted. Logged out!');
+            throw new Error('User Restricted. Logged out!');
+          }
         }
 
         req.user = appUser;
@@ -83,10 +101,12 @@ export default class TokenValidation {
       const appUser = await user.findOne({ _id: decoded.userId });
 
       if (appUser) {
-        if (appUser.isBlocked || appUser.isDeleted) {
-          res.status(401);
+        if (!appUser.isSuperAdmin) {
+          if (appUser.isBlocked || appUser.isDeleted) {
+            res.status(401);
 
-          throw new Error('User Restricted. Logged out!');
+            throw new Error('User Restricted. Logged out!');
+          }
         }
 
         req.user = appUser;

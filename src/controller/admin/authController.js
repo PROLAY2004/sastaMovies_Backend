@@ -23,12 +23,12 @@ export default class AuthController {
         throw new Error('User does not exists or deleted.');
       }
 
-      if (isUser.role !== 'admin') {
+      if (isUser.role !== 'admin' && !isUser.isSuperAdmin) {
         res.status(400);
         throw new Error('Access Denied. Admin only.');
       }
 
-      if (isUser.isBlocked) {
+      if (isUser.isBlocked && !isUser.isSuperAdmin) {
         res.status(400);
         throw new Error('Admin blocked. Contact Support!');
       }
@@ -103,27 +103,27 @@ export default class AuthController {
       const userResponse = await axios.get(
         `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleResponse.tokens.access_token}`
       );
-      const userinfo = await user.findOne({
+      const userInfo = await user.findOne({
         email: userResponse.data.email,
         isDeleted: false,
       });
 
-      if (!userinfo) {
+      if (!userInfo) {
         res.status(404);
         throw new Error('User does not exists or deleted');
       }
 
-      if (userinfo.role !== 'admin') {
+      if (userInfo.role !== 'admin' && !userInfo.isSuperAdmin) {
         res.status(400);
         throw new Error('Access Denied. Admin only.');
       }
 
-      if (userinfo.isBlocked) {
+      if (userInfo.isBlocked && !userInfo.isSuperAdmin) {
         res.status(400);
         throw new Error('Admin Blocked. Contact Support!');
       }
 
-      const tokens = await genAuthToken(userinfo._id);
+      const tokens = await genAuthToken(userInfo._id);
 
       res.status(200).json({
         message: 'Google login successful.',
@@ -142,7 +142,7 @@ export default class AuthController {
     try {
       const userInfo = req.user;
 
-      if (userInfo.role !== 'admin') {
+      if (userInfo.role !== 'admin' && !userInfo.isSuperAdmin) {
         res.status(400);
         throw new Error('Access Denied. Admin only.');
       }

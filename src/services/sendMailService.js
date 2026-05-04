@@ -46,6 +46,22 @@ export default class SendEmailService {
     }
   };
 
+  newAdminMailer = async (name, email) => {
+    try {
+      const mailResponse = await this.mailSender(
+        email,
+        'Admin Account Created',
+        template.adminUpgradeTemplate(name)
+      );
+
+      if (mailResponse instanceof Error) {
+        throw mailResponse;
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
   renewalMailer = async (name, email, previousExpiryDate, expireDate) => {
     try {
       const mailResponse = await this.mailSender(

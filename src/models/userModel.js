@@ -48,7 +48,7 @@ const usrSchema = new mongoose.Schema(
     },
 
     permission: {
-      type: [String],
+      type: [String], // movies, series, users
       required: true,
       default: [],
     },

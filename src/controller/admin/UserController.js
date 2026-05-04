@@ -11,15 +11,16 @@ export default class UserController {
   invite = async (req, res, next) => {
     try {
       const { name, email, date } = req.body;
+      const isUser = await user.findOne({ email, isDeleted: false });
 
-      // 🔹 Check existing user
-      const isUser = await user.findOne({ email });
-      if (isUser) {
+      if (isUser && isUser.role === 'admin') {
         res.status(400);
-        throw new Error('Email already exists.');
+        throw new Error('Email already exists as admin.');
+      } else if (isUser && isUser.role === 'user') {
+        res.status(400);
+        throw new Error('Email already exists as user.');
       }
 
-      // 🔹 Create validTill (date + current time)
       const now = new Date();
       const validTill = new Date(date);
 
@@ -30,7 +31,6 @@ export default class UserController {
         now.getMilliseconds()
       );
 
-      // 🔹 Save user
       const newUser = await user.create({ name, email, validTill });
 
       await activity.create({

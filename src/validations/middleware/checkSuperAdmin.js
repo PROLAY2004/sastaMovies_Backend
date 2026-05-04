@@ -2,7 +2,7 @@ const isSuperAdmin = async (req, res, next) => {
   try {
     if (!req.user.isSuperAdmin) {
       res.status(400);
-      throw new Error('Access Denied. ');
+      throw new Error('Access Denied.');
     }
 
     next();
