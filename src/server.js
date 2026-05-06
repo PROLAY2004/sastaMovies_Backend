@@ -18,7 +18,7 @@ const app = express();
 app.use(cors(configuration.CORS));
 
 app.use(express.json());
-app.use(loggerMiddleware);
+// app.use(loggerMiddleware);
 
 app.use('/user/auth', authRoutes);
 app.use('/user/admin', tokenValidator.isAdmin, adminRoutes);

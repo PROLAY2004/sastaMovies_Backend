@@ -13,8 +13,8 @@ const usrSchema = new mongoose.Schema(
     },
 
     validTill: {
-      type: String,
-      required: true,
+      type: Date,
+      default: null,
     },
 
     role: {

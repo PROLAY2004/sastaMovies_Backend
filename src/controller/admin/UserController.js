@@ -13,6 +13,8 @@ export default class UserController {
       const { name, email, date } = req.body;
       const isUser = await user.findOne({ email, isDeleted: false });
 
+      console.log(date);
+
       if (isUser && isUser.role === 'admin') {
         res.status(400);
         throw new Error('Email already exists as admin.');
@@ -198,40 +200,54 @@ export default class UserController {
 
   renewUser = async (req, res, next) => {
     try {
-      if (!req.body.userId) {
+      const { userId, date } = req.body;
+
+      if (!userId) {
         res.status(400);
         throw new Error('UserId is Required');
       }
 
-      const inputDate = new Date(req.body.date);
+      if (!date) {
+        res.status(400);
+        throw new Error('Date is Required');
+      }
 
+      // ✅ VALIDATION
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(0, 0, 0, 0);
 
-      inputDate.setHours(0, 0, 0, 0);
+      const selectedDate = new Date(date);
+      selectedDate.setHours(0, 0, 0, 0);
 
-      if (inputDate < tomorrow) {
+      if (selectedDate < tomorrow) {
         throw new Error('Date must be at least tomorrow');
       }
 
-      // ✅ SAME LOGIC AS INVITE
-      inputDate.setHours(23, 59, 59, 999);
+      // ✅ ALWAYS CREATE FRESH DATE OBJECT
+      const now = new Date();
+      const validTill = new Date(date);
 
-      const userData = await user.findOne({
-        _id: req.body.userId,
-        isDeleted: false,
-      });
+      validTill.setHours(
+        now.getHours(),
+        now.getMinutes(),
+        now.getSeconds(),
+        now.getMilliseconds()
+      );
 
       const updatedUser = await user.findOneAndUpdate(
-        { _id: req.body.userId, isDeleted: false },
-        { $set: { validTill: inputDate } },
+        { _id: userId, isDeleted: false },
+        {
+          $set: {
+            validTill,
+          },
+        },
         { new: true }
       );
 
       if (!updatedUser) {
         res.status(400);
-        throw new Error('User does not exists or deleted.');
+        throw new Error('User does not exist or deleted.');
       }
 
       await activity.create({
@@ -242,13 +258,6 @@ export default class UserController {
         targetName: updatedUser.name,
         targetDetails: updatedUser.email,
       });
-
-      mailer.renewalMailer(
-        updatedUser.name,
-        updatedUser.email,
-        format.dateAndTimeTemplate(userData.validTill),
-        format.dateTemplate(updatedUser.validTill)
-      );
 
       res.status(200).json({
         message: 'User subscription renewed',

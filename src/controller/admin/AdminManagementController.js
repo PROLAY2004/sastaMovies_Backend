@@ -98,13 +98,11 @@ export default class AdminManagementController {
         throw new Error('Admin should have atleast one permission');
       }
 
-      const validTill = '0000-00-00';
       const newAdmin = await user.create({
         name,
         email,
         role: 'admin',
         permission: permissions,
-        validTill,
       });
 
       await activity.create({
@@ -198,16 +196,57 @@ export default class AdminManagementController {
   // 5. Downgrade Admin to User
   downgradeAdmin = async (req, res, next) => {
     try {
-      if (!req.body.adminId) throw new Error('AdminId is Required');
+      const { adminId, date } = req.body;
+
+      if (!adminId) {
+        res.status(400);
+        throw new Error('AdminId is Required');
+      }
+
+      if (!date) {
+        res.status(400);
+        throw new Error('Date is Required');
+      }
+
+      // ✅ VALIDATION
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+
+      const selectedDate = new Date(date);
+      selectedDate.setHours(0, 0, 0, 0);
+
+      if (selectedDate < tomorrow) {
+        throw new Error('Date must be at least tomorrow');
+      }
+
+      // ✅ CREATE CLEAN DATE
+      const now = new Date();
+      const validTill = new Date(date);
+
+      validTill.setHours(
+        now.getHours(),
+        now.getMinutes(),
+        now.getSeconds(),
+        now.getMilliseconds()
+      );
 
       const updatedAdmin = await user.findOneAndUpdate(
-        { _id: req.body.adminId, role: 'admin', isDeleted: false },
-        { $set: { role: 'user', permission: [] } }, // Revert to user, strip permissions
+        { _id: adminId, isDeleted: false },
+        {
+          $set: {
+            role: 'user',
+            permission: [],
+            validTill,
+          },
+        },
         { new: true }
       );
 
-      if (!updatedAdmin)
+      if (!updatedAdmin) {
+        res.status(400);
         throw new Error('Admin does not exist or was deleted.');
+      }
 
       await activity.create({
         adminId: req.user._id,
