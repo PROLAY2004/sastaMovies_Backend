@@ -11,7 +11,7 @@ export default class TokenValidation {
       });
 
       if (!appUser) {
-        res.status(404);
+        res.status(401);
         throw new Error('User does not exists');
       }
 
@@ -21,11 +21,7 @@ export default class TokenValidation {
         throw new Error('User deleted. Logging out!');
       }
 
-      if (
-        appUser.isBlocked &&
-        appUser.role !== 'admin' &&
-        !appUser.isSuperAdmin
-      ) {
+      if (appUser.isBlocked && !appUser.isSuperAdmin) {
         res.status(401);
         throw new Error('User Blocked by admin.');
       }
@@ -33,7 +29,11 @@ export default class TokenValidation {
       const expiryTime = new Date(appUser.validTill);
       const now = new Date();
 
-      if (now > expiryTime) {
+      if (
+        now > expiryTime &&
+        appUser.role !== 'admin' &&
+        !appUser.isSuperAdmin
+      ) {
         res.status(401);
         throw new Error('User subscription expired.');
       }
@@ -99,6 +99,8 @@ export default class TokenValidation {
     try {
       const decoded = verifyToken(req, res, configuration.REFRESH_SECRET);
       const appUser = await user.findOne({ _id: decoded.userId });
+      const expiryTime = new Date(appUser.validTill);
+      const now = new Date();
 
       if (appUser) {
         if (!appUser.isSuperAdmin) {
@@ -106,6 +108,11 @@ export default class TokenValidation {
             res.status(401);
 
             throw new Error('User Restricted. Logged out!');
+          }
+
+          if (now > expiryTime && appUser.role !== 'admin') {
+            res.status(401);
+            throw new Error('User subscription expired.');
           }
         }
 

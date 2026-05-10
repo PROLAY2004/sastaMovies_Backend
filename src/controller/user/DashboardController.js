@@ -2,8 +2,8 @@ import DateFormatter from '../../utils/DateFormatter.js';
 
 const format = new DateFormatter();
 
-export default class UserController {
-  dashboard = async (req, res, next) => {
+export default class DashboardController {
+  fetchProfile = async (req, res, next) => {
     try {
       const userInfo = req.user;
       const userSince = format.dateTemplate(userInfo.createdAt);

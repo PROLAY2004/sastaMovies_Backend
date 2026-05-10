@@ -1,9 +1,9 @@
 import express from 'express';
 
-import UserController from '../controller/user/UserController.js';
+import DashboardController from '../controller/user/DashboardController.js';
 
 const router = express.Router();
-const profile = new UserController();
+const dashboard = new DashboardController();
 
-router.get('/account/dashboard', profile.dashboard);
+router.get('/account', dashboard.fetchProfile);
 export default router;
