@@ -34,11 +34,16 @@ export default class DashboardController {
 
   removeAll = async (req, res, next) => {
     try {
-      await user.findOneAndUpdate(
-        { _id: req.user._id },
+      const updatedUser = await user.findOneAndUpdate(
+        { _id: req.user._id, savedContents: { $exists: true, $ne: [] } },
         { $set: { savedContents: [] } },
         { new: true }
       );
+
+      if(!updatedUser){
+        res.status(400);
+        throw new Error('No content available to remove');
+      }
 
       res.status(200).json({
         message: 'Removed all successfully',
