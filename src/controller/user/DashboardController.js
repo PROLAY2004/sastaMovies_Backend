@@ -40,13 +40,37 @@ export default class DashboardController {
         { new: true }
       );
 
-      if(!updatedUser){
+      if (!updatedUser) {
         res.status(400);
         throw new Error('No content available to remove');
       }
 
       res.status(200).json({
         message: 'Removed all successfully',
+        success: true,
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  editProfile = async (req, res, next) => {
+    try {
+      const name = req.body.name;
+
+      if(!name){
+        res.status(400);
+        throw new Error('Please Enter a valid name.');
+      }
+      
+      await user.findOneAndUpdate(
+        { _id: req.user._id},
+        { $set: { name } },
+        { new: true }
+      );
+
+      res.status(200).json({
+        message: 'Profile updated successfully',
         success: true,
       });
     } catch (err) {
