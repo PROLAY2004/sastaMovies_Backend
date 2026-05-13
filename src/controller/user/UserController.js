@@ -8,7 +8,7 @@ export default class UserController {
         message: 'userDetails fetched successfully',
         success: true,
         data: {
-          user : req.user,
+          user: req.user,
         },
       });
     } catch (err) {
@@ -30,15 +30,19 @@ export default class UserController {
           },
         ]),
 
-        content.find({
-          contentType: 'movie',
-          isDeleted: false,
-        }),
+        content
+          .find({
+            contentType: 'movie',
+            isDeleted: false,
+          })
+          .limit(12),
 
-        content.find({
-          contentType: 'series',
-          isDeleted: false,
-        }),
+        content
+          .find({
+            contentType: 'series',
+            isDeleted: false,
+          })
+          .limit(12),
       ]);
 
       res.status(200).json({
