@@ -10,7 +10,6 @@ export default class DashboardController {
       const userInfo = req.user.toObject();
       const userSince = format.dateTemplate(userInfo.createdAt);
       const validTill = format.dateTemplate(userInfo.validTill);
-      const contentCount = userInfo.savedContents.length;
 
       userInfo.contentObjects = await content.find({
         _id: { $in: userInfo.savedContents },
@@ -24,7 +23,6 @@ export default class DashboardController {
           userInfo,
           userSince,
           validTill,
-          contentCount,
         },
       });
     } catch (err) {
