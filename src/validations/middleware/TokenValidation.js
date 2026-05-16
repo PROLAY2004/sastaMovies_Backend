@@ -99,7 +99,7 @@ export default class TokenValidation {
     try {
       const decoded = verifyToken(req, res, configuration.REFRESH_SECRET);
       const appUser = await user.findOne({ _id: decoded.userId });
-      const expiryTime = new Date(appUser.validTill);
+      const expiryTime = new Date(appUser?.validTill);
       const now = new Date();
 
       if (appUser) {
