@@ -62,13 +62,20 @@ export default class UserController {
   setContent = async (req, res, next) => {
     try {
       let message = '';
+      const contentId = req.params.contentId;
+      const contentData = await content.findOne({_id : contentId, isDeleted : false});
 
-      if (req.user.savedContents.includes(req.params.contentId)) {
+      if(!contentData){
+        res.status(400);
+        throw new Error("Content does not exists or deleted");
+      }
+
+      if (req.user.savedContents.includes(contentId)) {
         const updatedUser = await user.findOneAndUpdate(
           { _id: req.user._id, isDeleted: false },
           {
             $pull: {
-              savedContents: req.params.contentId,
+              savedContents: contentId,
             },
           },
           { new: true }
@@ -85,7 +92,7 @@ export default class UserController {
           { _id: req.user._id, isDeleted: false },
           {
             $push: {
-              savedContents: req.params.contentId,
+              savedContents: contentId,
             },
           },
           { new: true }
