@@ -1,24 +1,114 @@
-import DateFormatter from '../../utils/DateFormatter.js';
-
-const format = new DateFormatter();
+import content from '../../models/contentModel.js';
+import user from '../../models/userModel.js';
 
 export default class UserController {
-  dashboard = async (req, res, next) => {
+  getUser = async (req, res, next) => {
     try {
-      const userInfo = req.user;
-      const userSince = format.dateTemplate(userInfo.createdAt);
-      const validTill = format.dateTemplate(userInfo.validTill);
-      const contentCount = userInfo.savedContents.length;
-
       res.status(200).json({
-        message: 'User Deails fetched successfully',
+        message: 'userDetails fetched successfully',
         success: true,
         data: {
-          userInfo,
-          userSince,
-          validTill,
-          contentCount,
+          user: req.user,
         },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  home = async (req, res, next) => {
+    try {
+      const [randomContent, movies, series] = await Promise.all([
+        content.aggregate([
+          {
+            $match: {
+              isDeleted: false,
+            },
+          },
+          {
+            $sample: { size: 1 },
+          },
+        ]),
+
+        content
+          .find({
+            contentType: 'movie',
+            isDeleted: false,
+          })
+          .limit(12),
+
+        content
+          .find({
+            contentType: 'series',
+            isDeleted: false,
+          })
+          .limit(12),
+      ]);
+
+      res.status(200).json({
+        message: 'Details fetched successfully',
+        success: true,
+        data: {
+          randomContent: randomContent[0],
+          movies,
+          series,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  setContent = async (req, res, next) => {
+    try {
+      let message = '';
+      const contentId = req.params.contentId;
+      const contentData = await content.findOne({_id : contentId, isDeleted : false});
+
+      if(!contentData){
+        res.status(400);
+        throw new Error("Content does not exists or deleted");
+      }
+
+      if (req.user.savedContents.includes(contentId)) {
+        const updatedUser = await user.findOneAndUpdate(
+          { _id: req.user._id, isDeleted: false },
+          {
+            $pull: {
+              savedContents: contentId,
+            },
+          },
+          { new: true }
+        );
+
+        if (!updatedUser) {
+          res.status(400);
+          throw new Error('User Blocked or Deleted');
+        }
+
+        message = 'Content removed successfully';
+      } else {
+        const updatedUser = await user.findOneAndUpdate(
+          { _id: req.user._id, isDeleted: false },
+          {
+            $push: {
+              savedContents: contentId,
+            },
+          },
+          { new: true }
+        );
+
+        if (!updatedUser) {
+          res.status(400);
+          throw new Error('User Blocked or Deleted');
+        }
+
+        message = 'Content saved successfully';
+      }
+
+      res.status(200).json({
+        message,
+        success: true,
       });
     } catch (err) {
       next(err);

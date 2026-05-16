@@ -13,8 +13,6 @@ export default class UserController {
       const { name, email, date } = req.body;
       const isUser = await user.findOne({ email, isDeleted: false });
 
-      console.log(date);
-
       if (isUser && isUser.role === 'admin') {
         res.status(400);
         throw new Error('Email already exists as admin.');

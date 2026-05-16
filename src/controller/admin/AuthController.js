@@ -143,7 +143,7 @@ export default class AuthController {
       const userInfo = req.user;
 
       if (userInfo.role !== 'admin' && !userInfo.isSuperAdmin) {
-        res.status(400);
+        res.status(401);
         throw new Error('Access Denied. Admin only.');
       }
 

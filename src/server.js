@@ -22,7 +22,7 @@ app.use(express.json());
 
 app.use('/user/auth', authRoutes);
 app.use('/user/admin', tokenValidator.isAdmin, adminRoutes);
-app.use('/user', tokenValidator.accessTokenValidator, userRoutes);
+app.use('/user', userRoutes);
 
 app.use(errorHandler);
 

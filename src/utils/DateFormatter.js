@@ -28,9 +28,11 @@ export default class DateFormatter {
   };
 
   dateTemplate = (input) => {
-    const date = new Date(input);
+    if (input === null) {
+      return null;
+    }
 
-    // Helper for 1st, 2nd, 3rd, 4th...
+    const date = new Date(input);
     const getOrdinal = (n) => {
       const s = ['th', 'st', 'nd', 'rd'];
       const v = n % 100;

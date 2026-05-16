@@ -2,7 +2,7 @@ import express from 'express';
 
 import AuthController from '../controller/user/authController.js';
 import AuthControllerAdmin from '../controller/admin/authController.js';
-import UserController from '../controller/user/UserController.js';
+import UserController from '../controller/user/DashboardController.js';
 import TokenValidation from '../validations/middleware/TokenValidation.js';
 
 const router = express.Router();
