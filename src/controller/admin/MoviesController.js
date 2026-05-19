@@ -47,7 +47,10 @@ export default class MoviesController {
           description: movieData.Plot || '',
           release: movieData.Released || '',
           cast,
+          directors: movieData.Director ? movieData.Director.split(', ') : [],
           runtime: movieData.Runtime || '0 min',
+          country: movieData.Country || 'N/A',
+          language: movieData.Language || 'N/A',
           rating: parseFloat(movieData.imdbRating) || 0,
           genre,
           posterUrl: {
@@ -209,7 +212,10 @@ export default class MoviesController {
           description: response.movieData.data.Plot || '',
           release: response.movieData.data.Released || '',
           cast: response.movieData.data.Actors.split(', ') || '',
-          runtime: response.movieData.data.Runtime || '',
+          runtime: response.movieData.data.Runtime || '0 min',
+          directors: response.movieData.data.Director ? response.movieData.data.Director.split(', ') : [],
+          country: response.movieData.data.Country || 'N/A',
+          language: response.movieData.data.Language || 'N/A',
           rating: parseFloat(response.movieData.data.imdbRating) || 0,
           genre: response.movieData.data.Genre.split(', ') || '',
           posterUrl: {

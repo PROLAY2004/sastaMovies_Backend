@@ -63,11 +63,14 @@ export default class UserController {
     try {
       let message = '';
       const contentId = req.params.contentId;
-      const contentData = await content.findOne({_id : contentId, isDeleted : false});
+      const contentData = await content.findOne({
+        _id: contentId,
+        isDeleted: false,
+      });
 
-      if(!contentData){
+      if (!contentData) {
         res.status(400);
-        throw new Error("Content does not exists or deleted");
+        throw new Error('Content does not exists or deleted');
       }
 
       if (req.user.savedContents.includes(contentId)) {
@@ -109,6 +112,30 @@ export default class UserController {
       res.status(200).json({
         message,
         success: true,
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  player = async (req, res, next) => {
+    try {
+      if (!req.body.contentId) {
+        res.status(400);
+        throw new Error('Content Id is required');
+      }
+
+      const contentInfo = await content.findOne({
+        _id: req.body.contentId,
+        isDeleted: false,
+      });
+
+      res.status(200).json({
+        message: 'Content info fetched successfully',
+        success: true,
+        data: {
+          contentInfo,
+        },
       });
     } catch (err) {
       next(err);
