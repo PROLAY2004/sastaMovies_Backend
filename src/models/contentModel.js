@@ -22,7 +22,22 @@ const contentSchema = new mongoose.Schema(
       required: true,
     },
 
+    country: {
+      type: String,
+      required: true,
+    },
+
+    language: {
+      type: String,
+      required: true,
+    },
+
     cast: {
+      type: [String],
+      required: true,
+    },
+
+    directors: {
       type: [String],
       required: true,
     },
