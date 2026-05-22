@@ -15,6 +15,7 @@ router.get('/account', tokenValidator.accessTokenValidator, dashboard.fetchProfi
 router.get('/watch-later/:contentId', tokenValidator.accessTokenValidator, user.setContent);
 router.get('/remove-all', tokenValidator.accessTokenValidator, dashboard.removeAll)
 router.patch('/edit', tokenValidator.accessTokenValidator, dashboard.editProfile);
+router.get('/stream/:contentId', user.fetchContentDetails);
 
 router.post('/fetch-player', user.player)
 router.get('/home', user.home);
