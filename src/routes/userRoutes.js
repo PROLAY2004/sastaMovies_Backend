@@ -13,10 +13,10 @@ router.get('/me', tokenValidator.accessTokenValidator, user.getUser);
 
 router.get('/account', tokenValidator.accessTokenValidator, dashboard.fetchProfile);
 router.get('/watch-later/:contentId', tokenValidator.accessTokenValidator, user.setContent);
-router.get('/remove-all', tokenValidator.accessTokenValidator, dashboard.removeAll)
+router.get('/remove-all', tokenValidator.accessTokenValidator, dashboard.removeAll);
 router.patch('/edit', tokenValidator.accessTokenValidator, dashboard.editProfile);
-router.get('/stream/:contentId', user.fetchContentDetails);
+router.post('/fetch-player', tokenValidator.accessTokenValidator, user.player);
 
-router.post('/fetch-player', user.player)
+router.get('/stream/:contentId', user.fetchContentDetails);
 router.get('/home', user.home);
 export default router;
