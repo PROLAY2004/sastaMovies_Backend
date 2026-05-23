@@ -206,4 +206,195 @@ export default class NotificationTemplate {
       </body>
       </html>`;
   };
+
+  contactTemplate = (name, email, message, newsletterSubscribed) => {
+    return `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Contact Request Received</title>
+
+      <style>
+        ${style.activationStyle()}
+      </style>
+    </head>
+
+    <body>
+      <div class="container">
+
+        <!-- Logo -->
+        <div class="logo">
+          SASTA <span>MOVIES</span>
+        </div>
+
+        <!-- Title -->
+        <div class="title">
+          📩 We Received Your Message
+        </div>
+
+        <!-- Subtitle -->
+        <div class="subtitle">
+          Hey ${name}, thanks for contacting us. Our team will review your message and get back to you shortly.
+        </div>
+
+        <!-- Status Box -->
+        <div class="status-box">
+
+          <div class="badge">
+            CONTACT REQUEST
+          </div>
+
+          <div class="plan" style="font-size:16px; margin-bottom:16px;">
+            ${email}
+          </div>
+
+          <div style="
+            text-align:left;
+            background:#111;
+            border-radius:14px;
+            padding:16px;
+            color:#d1d5db;
+            font-size:14px;
+            line-height:1.7;
+            word-break:break-word;
+          ">
+            ${message}
+          </div>
+
+          <div class="expiry" style="margin-top:16px;">
+            Newsletter Subscription:
+            <b>
+              ${newsletterSubscribed ? 'Subscribed ✅' : 'Not Subscribed ❌'}
+            </b>
+          </div>
+
+        </div>
+
+        <!-- CTA -->
+        <div style="text-align:center;">
+          <a href="${configuration.FRONTEND_URL}" class="btn">
+            Visit Website 🌐
+          </a>
+        </div>
+
+        <!-- Divider -->
+        <div class="line"></div>
+
+        <!-- Footer -->
+        <div class="footer-text">
+          Our support team usually replies within 24 hours.
+        </div>
+
+        <div class="brand-footer">
+          © 2026 <span>Sasta Movies</span>
+        </div>
+
+      </div>
+    </body>
+    </html>`;
+  };
+
+  adminContactTemplate = (name, email, message, newsletterSubscribed) => {
+    return `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>New Contact Request</title>
+
+      <style>
+        ${style.activationStyle()}
+      </style>
+    </head>
+
+    <body>
+      <div class="container">
+
+        <!-- Logo -->
+        <div class="logo">
+          SASTA <span>MOVIES</span>
+        </div>
+
+        <!-- Title -->
+        <div class="title">
+          🚨 New Contact Form Submission
+        </div>
+
+        <!-- Subtitle -->
+        <div class="subtitle">
+          A new user has submitted a contact request from the website.
+        </div>
+
+        <!-- Status Box -->
+        <div class="status-box">
+
+          <div class="badge">
+            NEW MESSAGE
+          </div>
+
+          <div style="
+            text-align:left;
+            margin-top:18px;
+            color:#d1d5db;
+            line-height:1.9;
+            font-size:14px;
+          ">
+
+            <div>
+              <b style="color:#fff;">Name:</b>
+              ${name}
+            </div>
+
+            <div>
+              <b style="color:#fff;">Email:</b>
+              ${email}
+            </div>
+
+            <div>
+              <b style="color:#fff;">Newsletter:</b>
+              ${newsletterSubscribed ? 'Subscribed ✅' : 'Not Subscribed ❌'}
+            </div>
+
+          </div>
+
+          <div style="
+            margin-top:20px;
+            text-align:left;
+            background:#111;
+            border-radius:14px;
+            padding:16px;
+            color:#d1d5db;
+            font-size:14px;
+            line-height:1.7;
+            word-break:break-word;
+          ">
+            ${message}
+          </div>
+
+        </div>
+
+        <!-- CTA -->
+        <div style="text-align:center;">
+          <a href="mailto:${email}" class="btn">
+            Reply to User ✉️
+          </a>
+        </div>
+
+        <!-- Divider -->
+        <div class="line"></div>
+
+        <!-- Footer -->
+        <div class="footer-text">
+          This notification was generated automatically from the contact form system.
+        </div>
+
+        <div class="brand-footer">
+          © 2026 <span>Sasta Movies</span>
+        </div>
+
+      </div>
+    </body>
+    </html>`;
+  };
 }

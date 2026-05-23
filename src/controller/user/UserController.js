@@ -4,7 +4,10 @@ import content from '../../models/contentModel.js';
 import user from '../../models/userModel.js';
 import bucket from '../../models/bucketModel.js';
 import getMimeType from '../../utils/mimeFormat.js';
+import contact from '../../models/contactModel.js';
+import SendEmailService from '../../services/sendMailService.js';
 
+const mailer = new SendEmailService();
 export default class UserController {
   getUser = async (req, res, next) => {
     try {
@@ -275,6 +278,28 @@ export default class UserController {
       } else {
         next(err);
       }
+    }
+  };
+
+  contact = async (req, res, next) => {
+    try {
+      const { name, email, message, isSubscribed } = req.body;
+
+      const newContact = await contact.create({
+        name,
+        email,
+        message,
+        isSubscribed,
+      });
+
+      mailer.contactMailer(name, email, message, isSubscribed);
+
+      res.status(200).json({
+        message: 'Message sent successfully',
+        success: true,
+      });
+    } catch (err) {
+      next(err);
     }
   };
 }

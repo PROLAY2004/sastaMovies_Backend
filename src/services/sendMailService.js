@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import configuration from '../config/config.js';
 import OtpTemplate from '../templates/OtpTemplate.js';
+import user from '../models/userModel.js';
 import NotificationTemplate from '../templates/NotificationTemplate.js';
 
 const template = new NotificationTemplate();
@@ -114,6 +115,31 @@ export default class SendEmailService {
 
       if (mailResponse instanceof Error) {
         throw mailResponse;
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  contactMailer = async (name, email, message, isSubscribed) => {
+    try {
+      const mailResponse1 = await this.mailSender(
+        email,
+        'Contact Request Received',
+        template.contactTemplate(name, email, message, isSubscribed)
+      );
+
+      const mailResponse2 = await this.mailSender(
+        user.find({isSuperAdmin: true, isDeleted: false}).email,
+        'New Contact Request',
+        template.adminContactTemplate(name, email, message, isSubscribed)
+      );
+
+      if (mailResponse1 instanceof Error) {
+        throw mailResponse1;
+      }
+      if (mailResponse2 instanceof Error) {
+        throw mailResponse2;
       }
     } catch (error) {
       throw error;
