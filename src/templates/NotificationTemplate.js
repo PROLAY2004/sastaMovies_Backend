@@ -212,7 +212,7 @@ export default class NotificationTemplate {
     <html lang="en">
     <head>
       <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
       <title>Contact Request Received</title>
 
       <style>
@@ -265,7 +265,7 @@ export default class NotificationTemplate {
           <div class="expiry" style="margin-top:16px;">
             Newsletter Subscription:
             <b>
-              ${newsletterSubscribed ? 'Subscribed ✅' : 'Not Subscribed ❌'}
+              ${newsletterSubscribed ? 'Subscribed' : 'Not Subscribed'}
             </b>
           </div>
 
@@ -353,7 +353,7 @@ export default class NotificationTemplate {
 
             <div>
               <b style="color:#fff;">Newsletter:</b>
-              ${newsletterSubscribed ? 'Subscribed ✅' : 'Not Subscribed ❌'}
+              ${newsletterSubscribed ? 'Subscribed' : 'Not Subscribed'}
             </div>
 
           </div>
