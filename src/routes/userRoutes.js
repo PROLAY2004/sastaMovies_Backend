@@ -23,5 +23,6 @@ router.get('/stream/:contentId',  user.fetchContentDetails);
 router.post('/contact', userValidation.contactRequest, user.contact);
 router.get('/home', user.home);
 router.post('/movies', user.movies);
+router.post('/series', user.series);
 
 export default router;

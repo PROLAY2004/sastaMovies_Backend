@@ -411,4 +411,102 @@ export default class UserController {
       next(err);
     }
   };
+
+  series = async (req, res, next) => {
+    try {
+      const { searchQuery, genre, year, rating, sortBy } = req.body;
+
+      // 1. Base query for active series
+      let query = {
+        contentType: 'series',
+        isDeleted: false,
+      };
+
+      // 2. Search Query (Auto-triggered from frontend)
+      if (searchQuery) {
+        query.$or = [
+          { title: { $regex: searchQuery, $options: 'i' } },
+          { genre: { $regex: searchQuery, $options: 'i' } },
+        ];
+      }
+
+      // 3. Genre Filter
+      if (genre && genre !== 'all') {
+        query.genre = { $regex: genre, $options: 'i' };
+      }
+
+      // 4. Year Filter
+      if (year && year !== 'all') {
+        query.release = { $regex: year, $options: 'i' };
+      }
+
+      // 5. Rating Filter
+      if (rating && rating !== 'all') {
+        query.rating = { $gte: Number(rating) };
+      }
+
+      // 6. Database Sorting Logic
+      let sortOption = { createdAt: -1 }; // Default: Newest added
+      if (sortBy === 'rating') sortOption = { rating: -1 };
+      if (sortBy === 'title') sortOption = { title: 1 };
+      if (sortBy === 'seasons') sortOption = { seasons: -1 }; // Assuming you have a seasons count/array
+
+      // Fetch the filtered/sorted series
+      let seriesList = await content.find(query).sort(sortOption);
+
+      // 6.5 JavaScript Sorting for 'year' (Extracting the last 4 characters safely)
+      if (sortBy === 'year') {
+        seriesList.sort((a, b) => {
+          const yearA = parseInt(a.release?.toString().slice(-4)) || 0;
+          const yearB = parseInt(b.release?.toString().slice(-4)) || 0;
+          return yearB - yearA; // Descending order (Newest first)
+        });
+      }
+
+      // 7. Extract Unique Dynamic Options for Dropdowns
+      const allSeries = await content.find(
+        { contentType: 'series', isDeleted: false },
+        'genre release rating'
+      );
+
+      const uniqueGenres = new Set();
+      const uniqueYears = new Set();
+      const uniqueRatings = new Set();
+
+      allSeries.forEach((item) => {
+        if (item.genre) {
+          const genresArray = Array.isArray(item.genre)
+            ? item.genre
+            : item.genre.split(',');
+          genresArray.forEach((g) => {
+            if (g.trim()) uniqueGenres.add(g.trim());
+          });
+        }
+
+        if (item.release) {
+          const yr = item.release.toString().slice(-4);
+          if (!isNaN(yr) && yr.trim() !== '') uniqueYears.add(yr);
+        }
+
+        if (item.rating && !isNaN(item.rating)) {
+          uniqueRatings.add(Math.floor(item.rating));
+        }
+      });
+
+      res.status(200).json({
+        message: 'Series fetched successfully',
+        success: true,
+        data: {
+          series: seriesList,
+          options: {
+            genres: Array.from(uniqueGenres).sort(),
+            years: Array.from(uniqueYears).sort((a, b) => b - a),
+            ratings: Array.from(uniqueRatings).sort((a, b) => b - a),
+          },
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
 }
