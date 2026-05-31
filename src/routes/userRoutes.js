@@ -22,4 +22,6 @@ router.post('/fetch-player', tokenValidator.accessTokenValidator, user.player);
 router.get('/stream/:contentId',  user.fetchContentDetails);
 router.post('/contact', userValidation.contactRequest, user.contact);
 router.get('/home', user.home);
+router.post('/movies', user.movies);
+
 export default router;

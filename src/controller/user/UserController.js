@@ -42,14 +42,16 @@ export default class UserController {
             contentType: 'movie',
             isDeleted: false,
           })
-          .limit(12).sort({ createdAt: -1 }),
+          .limit(12)
+          .sort({ createdAt: -1 }),
 
         content
           .find({
             contentType: 'series',
             isDeleted: false,
           })
-          .limit(12).sort({ createdAt: -1 }),
+          .limit(12)
+          .sort({ createdAt: -1 }),
       ]);
 
       res.status(200).json({
@@ -297,6 +299,113 @@ export default class UserController {
       res.status(200).json({
         message: 'Message sent successfully',
         success: true,
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  // Backend Controller
+  movies = async (req, res, next) => {
+    try {
+      const { searchQuery, genre, year, rating, sortBy } = req.body;
+
+      // 1. Base query for active movies
+      let query = {
+        contentType: 'movie',
+        isDeleted: false,
+      };
+
+      // 2. Search Query (Auto-triggered from frontend)
+      if (searchQuery) {
+        query.$or = [
+          { title: { $regex: searchQuery, $options: 'i' } },
+          { genre: { $regex: searchQuery, $options: 'i' } },
+          // Uncomment below if you have an actors array
+          // { actors: { $regex: searchQuery, $options: 'i' } }
+        ];
+      }
+
+      // 3. Genre Filter
+      if (genre && genre !== 'all') {
+        // Matches the specific genre inside the string/array
+        query.genre = { $regex: genre, $options: 'i' };
+      }
+
+      // 4. Year Filter
+      if (year && year !== 'all') {
+        // Assuming 'release' is saved as a string containing the year
+        query.release = { $regex: year, $options: 'i' };
+      }
+
+      // 5. Rating Filter
+      if (rating && rating !== 'all') {
+        query.rating = { $gte: Number(rating) };
+      }
+
+      // 6. Sorting Logic
+      let sortOption = { createdAt: -1 }; // Default: Newest added
+      if (sortBy === 'rating') sortOption = { rating: -1 };
+      if (sortBy === 'title') sortOption = { title: 1 };
+
+      // Fetch the filtered/sorted movies
+      const movies = await content.find(query).sort(sortOption);
+
+      if (sortBy === 'year') {
+        movies.sort((a, b) => {
+          // Slice the last 4 characters, convert to integer. Fallback to 0 if it fails.
+          const yearA = parseInt(a.release?.toString().slice(-4)) || 0;
+          const yearB = parseInt(b.release?.toString().slice(-4)) || 0;
+
+          return yearB - yearA; // Descending order (Newest first)
+        });
+      }
+
+      // 7. Extract Unique Dynamic Options for Dropdowns
+      // We fetch all active movies to pull the available genres, years, and ratings.
+      const allMovies = await content.find(
+        { contentType: 'movie', isDeleted: false },
+        'genre release rating'
+      );
+
+      const uniqueGenres = new Set();
+      const uniqueYears = new Set();
+      const uniqueRatings = new Set();
+
+      allMovies.forEach((movie) => {
+        // Extract unique genres
+        if (movie.genre) {
+          const genresArray = Array.isArray(movie.genre)
+            ? movie.genre
+            : movie.genre.split(',');
+          genresArray.forEach((g) => {
+            if (g.trim()) uniqueGenres.add(g.trim());
+          });
+        }
+
+        // Extract unique years (assuming release holds year at the end, e.g., "12 Oct 2023" or "2023")
+        if (movie.release) {
+          const yr = movie.release.toString().slice(-4);
+          if (!isNaN(yr) && yr.trim() !== '') uniqueYears.add(yr);
+        }
+
+        // Extract unique ratings (Grouped by whole numbers e.g., 6+, 7+, 8+)
+        if (movie.rating && !isNaN(movie.rating)) {
+          uniqueRatings.add(Math.floor(movie.rating));
+        }
+      });
+
+      res.status(200).json({
+        message: 'Movies fetched successfully',
+        success: true,
+        data: {
+          movies,
+          options: {
+            genres: Array.from(uniqueGenres).sort(),
+            years: Array.from(uniqueYears).sort((a, b) => b - a), // Descending order
+            ratings: Array.from(uniqueRatings).sort((a, b) => b - a), // Descending order
+          },
+        },
       });
     } catch (err) {
       next(err);
