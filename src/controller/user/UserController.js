@@ -42,14 +42,14 @@ export default class UserController {
             contentType: 'movie',
             isDeleted: false,
           })
-          .limit(12),
+          .limit(12).sort({ createdAt: -1 }),
 
         content
           .find({
             contentType: 'series',
             isDeleted: false,
           })
-          .limit(12),
+          .limit(12).sort({ createdAt: -1 }),
       ]);
 
       res.status(200).json({
