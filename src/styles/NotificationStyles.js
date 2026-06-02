@@ -2,6 +2,7 @@ export default class NotificationStyles {
   activationStyle = () => {
     return `body {
                     margin: 0;
+                    box-sizing: border-box;
                     padding: 0;
                     background: #000;
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -9,11 +10,11 @@ export default class NotificationStyles {
 
                 /* Card */
                 .container {
-                    max-width: 480px;
+                    max-width: 350px;
                     margin: 60px auto;
                     background: #0d0d0d;
                     border-radius: 24px;
-                    padding: 40px 32px;
+                    padding: 40px 20px;
                     box-shadow: 0 30px 80px rgba(0,0,0,0.9);
                     border: 1px solid rgba(255,255,255,0.05);
                 }
@@ -116,13 +117,6 @@ export default class NotificationStyles {
 
                 .brand-footer span {
                     color: #facc15;
-                }
-
-                @media (max-width: 600px) {
-                    .container {
-                        margin: 20px;
-                        padding: 30px 20px;
-                    }
                 }`;
   };
 }

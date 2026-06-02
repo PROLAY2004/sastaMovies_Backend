@@ -23,4 +23,11 @@ export default class UserSchema {
       )
       .required('Please enter date'),
   });
+
+  contactSchema = yup.object({
+    name: yup.string().required('Please enter your name.'),
+    email: yup.string().email('Enter a valid email address').required('Please enter your email.'),
+    message: yup.string().required('Please enter your message.'),
+    isSubscribed: yup.boolean().default(false),
+  });
 }

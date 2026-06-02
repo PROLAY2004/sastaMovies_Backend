@@ -21,4 +21,22 @@ export default class UserValidation {
       next(err);
     }
   };
+
+  contactRequest = async (req, res, next) => {
+    try {
+      await schema.contactSchema.validate(req.body, {
+        abortEarly: true, // return all validation errors
+        stripUnknown: true, // remove unexpected fields
+      });
+      
+      next();
+    } catch (err) {
+      if (err instanceof ValidationError) {
+        res.status(400);
+        next(new Error(err.errors.join(', ')));
+      }
+
+      next(err);
+    }
+  };
 }
