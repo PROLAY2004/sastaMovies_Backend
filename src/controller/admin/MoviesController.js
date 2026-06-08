@@ -42,10 +42,10 @@ export default class MoviesController {
       // Step 5: Run independent DB operations in parallel
       await Promise.all([
         content.create({
-          imdbId: response.imdbId || '',
-          title: movieData.Title || '',
-          description: movieData.Plot || '',
-          release: movieData.Released || '',
+          imdbId: response.imdbId || 'N/A',
+          title: movieData.Title || 'N/A',
+          description: movieData.Plot || 'N/A',
+          release: movieData.Released || 'N/A',
           cast,
           directors: movieData.Director ? movieData.Director.split(', ') : [],
           runtime: movieData.Runtime || '0 min',
@@ -55,7 +55,9 @@ export default class MoviesController {
           genre,
           posterUrl: {
             horizontal: req.body.posterLink,
-            vertical: movieData.Poster || '',
+            vertical:
+              movieData.Poster ||
+              'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5l2N8CSq3Pz_Avi5abDq_iEZErbODkcW3Lg&s',
           },
           contentType: 'movie',
           contentIds: [[bucketInstance._id]],
@@ -208,19 +210,23 @@ export default class MoviesController {
         { _id: req.body.contentId },
         {
           imdbId: response.imdbId || '',
-          title: response.movieData.data.Title || '',
-          description: response.movieData.data.Plot || '',
-          release: response.movieData.data.Released || '',
-          cast: response.movieData.data.Actors.split(', ') || '',
+          title: response.movieData.data.Title || 'N/A',
+          description: response.movieData.data.Plot || 'N/A',
+          release: response.movieData.data.Released || 'N/A',
+          cast: response.movieData.data.Actors.split(', ') || 'N/A',
           runtime: response.movieData.data.Runtime || '0 min',
-          directors: response.movieData.data.Director ? response.movieData.data.Director.split(', ') : [],
+          directors: response.movieData.data.Director
+            ? response.movieData.data.Director.split(', ')
+            : [],
           country: response.movieData.data.Country || 'N/A',
           language: response.movieData.data.Language || 'N/A',
           rating: parseFloat(response.movieData.data.imdbRating) || 0,
-          genre: response.movieData.data.Genre.split(', ') || '',
+          genre: response.movieData.data.Genre.split(', ') || 'N/A',
           posterUrl: {
             horizontal: req.body.posterLink,
-            vertical: response.movieData.data.Poster || '',
+            vertical:
+              response.movieData.data.Poster ||
+              'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5l2N8CSq3Pz_Avi5abDq_iEZErbODkcW3Lg&s',
           },
         },
         { new: true } // Returns the updated document
