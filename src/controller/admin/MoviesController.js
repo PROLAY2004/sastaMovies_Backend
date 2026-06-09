@@ -26,8 +26,8 @@ export default class MoviesController {
       }
 
       // Step 3: Prepare cleaned data (avoid runtime errors)
-      const cast = movieData.Actors ? movieData.Actors.split(', ') : [];
-      const genre = movieData.Genre ? movieData.Genre.split(', ') : [];
+      const cast = movieData?.Actors ? movieData.Actors.split(', ') : [];
+      const genre = movieData?.Genre ? movieData.Genre.split(', ') : [];
 
       // Step 4: Create bucket (dependency for content)
       const bucketInstance = await bucket.create({
