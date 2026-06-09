@@ -254,6 +254,7 @@ export default class UserController {
             method: 'GET',
             url: chunkUrl,
             responseType: 'stream',
+            timeout: 15000,
             headers: {
               Range: `bytes=${offsetStart}-${offsetEnd}`,
             },
