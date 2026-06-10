@@ -5,6 +5,7 @@ import user from '../../models/userModel.js';
 import bucket from '../../models/bucketModel.js';
 import getMimeType from '../../utils/mimeFormat.js';
 import contact from '../../models/contactModel.js';
+import progress from '../../models/progressModel.js';
 import SendEmailService from '../../services/sendMailService.js';
 
 const mailer = new SendEmailService();
@@ -147,6 +148,18 @@ export default class UserController {
         throw new Error('Content not found');
       }
 
+      let userProgress = [];
+      // Ensure we are using req.user._id just like we did in saveProgress
+      if (req.user && req.user._id) {
+        userProgress = await progress
+          .find({
+            userId: req.user._id,
+            contentId: req.body.contentId,
+          })
+          .lean();
+      }
+      contentInfo.userProgress = userProgress;
+
       // FIX 2: Initialize the outer subtitles array
       contentInfo.subtitles = [];
 
@@ -173,6 +186,60 @@ export default class UserController {
       });
     } catch (err) {
       next(err);
+    }
+  };
+
+  saveProgress = (req, res, next) => {
+    try {
+      const {
+        contentId,
+        contentName,
+        contentType,
+        seasonNumber,
+        episodeNumber,
+        lastPosition,
+        duration,
+      } = req.body;
+
+      const watchPercentage =
+        duration > 0 ? (lastPosition / duration) * 100 : 0;
+      const isCompleted = watchPercentage >= 95;
+
+      // 1. Send response IMMEDIATELY to prevent frontend buffering.
+      // (This must be the ONLY response sent)
+      res
+        .status(200)
+        .json({ success: true, message: 'Progress syncing in background' });
+
+      // 2. Execute the DB operation without 'await'
+      progress
+        .findOneAndUpdate(
+          { userId: req.user._id, contentId, seasonNumber, episodeNumber }, // Match criteria
+          {
+            $set: {
+              contentName,
+              contentType: contentType || 'movie',
+              lastPosition,
+              duration,
+              watchPercentage,
+              isCompleted,
+            },
+            $inc: { watchCount: isCompleted ? 1 : 0 },
+          },
+          { upsert: true, new: true } // Create if not found, update if found
+        )
+        .exec() // <--- CRITICAL: This forces Mongoose to actually execute the query
+        .catch((dbErr) => {
+          // Catch and log any background DB errors so they don't fail silently
+          console.error('Background progress save failed:', dbErr.message);
+        });
+    } catch (err) {
+      // Only send an error response if the headers haven't already been sent
+      if (!res.headersSent) {
+        next(err);
+      } else {
+        console.error('Synchronous error after response sent:', err);
+      }
     }
   };
 

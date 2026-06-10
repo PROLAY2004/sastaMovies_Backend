@@ -18,6 +18,7 @@ router.get('/watch-later/:contentId', tokenValidator.accessTokenValidator, user.
 router.get('/remove-all', tokenValidator.accessTokenValidator, dashboard.removeAll);
 router.patch('/edit', tokenValidator.accessTokenValidator, dashboard.editProfile);
 router.post('/fetch-player', tokenValidator.accessTokenValidator, user.player);
+router.post('/save-progress', tokenValidator.accessTokenValidator, user.saveProgress);
 
 router.get('/stream/:contentId',  user.fetchContentDetails);
 router.post('/contact', userValidation.contactRequest, user.contact);
