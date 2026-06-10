@@ -148,12 +148,17 @@ export default class UserController {
         throw new Error('Content not found');
       }
 
-      const userProgress = await progress
-        .find({
-          userId: req.user._id,
-          contentId: req.body.contentId,
-        })
-        .lean();
+      let userProgress = [];
+      // Ensure we are using req.user._id just like we did in saveProgress
+      if (req.user && req.user._id) {
+        userProgress = await progress
+          .find({
+            userId: req.user._id,
+            contentId: req.body.contentId,
+          })
+          .lean();
+      }
+      contentInfo.userProgress = userProgress;
 
       // FIX 2: Initialize the outer subtitles array
       contentInfo.subtitles = [];
@@ -200,13 +205,16 @@ export default class UserController {
         duration > 0 ? (lastPosition / duration) * 100 : 0;
       const isCompleted = watchPercentage >= 95;
 
-      // Send response IMMEDIATELY. No buffering for the video player.
-      res.status(200).json({ success: true, message: 'Progress syncing' });
+      // 1. Send response IMMEDIATELY to prevent frontend buffering.
+      // (This must be the ONLY response sent)
+      res
+        .status(200)
+        .json({ success: true, message: 'Progress syncing in background' });
 
-      // Execute the DB operation without 'await' (Upsert logic)
+      // 2. Execute the DB operation without 'await'
       progress
         .findOneAndUpdate(
-          { userId : req.user._id, contentId, seasonNumber, episodeNumber }, // Match criteria
+          { userId: req.user._id, contentId, seasonNumber, episodeNumber }, // Match criteria
           {
             $set: {
               contentName,
@@ -220,13 +228,18 @@ export default class UserController {
           },
           { upsert: true, new: true } // Create if not found, update if found
         )
-
-        res.status(200).json({
-          message: 'progress info saved successfully',
-          success: true,
-        });        
+        .exec() // <--- CRITICAL: This forces Mongoose to actually execute the query
+        .catch((dbErr) => {
+          // Catch and log any background DB errors so they don't fail silently
+          console.error('Background progress save failed:', dbErr.message);
+        });
     } catch (err) {
-      next(err);
+      // Only send an error response if the headers haven't already been sent
+      if (!res.headersSent) {
+        next(err);
+      } else {
+        console.error('Synchronous error after response sent:', err);
+      }
     }
   };
 
