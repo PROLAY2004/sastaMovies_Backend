@@ -5,6 +5,7 @@ import user from '../../models/userModel.js';
 import bucket from '../../models/bucketModel.js';
 import getMimeType from '../../utils/mimeFormat.js';
 import contact from '../../models/contactModel.js';
+import progress from '../../models/progressModel.js';
 import SendEmailService from '../../services/sendMailService.js';
 
 const mailer = new SendEmailService();
@@ -146,6 +147,13 @@ export default class UserController {
         res.status(404);
         throw new Error('Content not found');
       }
+
+      const userProgress = await progress
+        .find({
+          userId: req.user._id,
+          contentId: req.body.contentId,
+        })
+        .lean();
 
       // FIX 2: Initialize the outer subtitles array
       contentInfo.subtitles = [];
