@@ -184,6 +184,52 @@ export default class UserController {
     }
   };
 
+  saveProgress = (req, res, next) => {
+    try {
+      const {
+        contentId,
+        contentName,
+        contentType,
+        seasonNumber,
+        episodeNumber,
+        lastPosition,
+        duration,
+      } = req.body;
+
+      const watchPercentage =
+        duration > 0 ? (lastPosition / duration) * 100 : 0;
+      const isCompleted = watchPercentage >= 95;
+
+      // Send response IMMEDIATELY. No buffering for the video player.
+      res.status(200).json({ success: true, message: 'Progress syncing' });
+
+      // Execute the DB operation without 'await' (Upsert logic)
+      progress
+        .findOneAndUpdate(
+          { userId : req.user._id, contentId, seasonNumber, episodeNumber }, // Match criteria
+          {
+            $set: {
+              contentName,
+              contentType: contentType || 'movie',
+              lastPosition,
+              duration,
+              watchPercentage,
+              isCompleted,
+            },
+            $inc: { watchCount: isCompleted ? 1 : 0 },
+          },
+          { upsert: true, new: true } // Create if not found, update if found
+        )
+
+        res.status(200).json({
+          message: 'progress info saved successfully',
+          success: true,
+        });        
+    } catch (err) {
+      next(err);
+    }
+  };
+
   fetchContentDetails = async (req, res, next) => {
     try {
       const chunkSize = 5 * 1024 * 1024; // 5MB chunks
