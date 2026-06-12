@@ -6,6 +6,7 @@ import MoviesController from '../controller/admin/MoviesController.js';
 import SeriesController from '../controller/admin/SeriesController.js';
 import UserController from '../controller/admin/UserController.js';
 import AdminManagementController from '../controller/admin/AdminManagementController.js';
+import responsesController from '../controller/admin/ResponsesController.js';
 
 import UserValidation from '../validations/middleware/UserValidation.js';
 import ContentValidation from '../validations/middleware/ContentValidation.js';
@@ -18,6 +19,7 @@ const movie = new MoviesController();
 const series = new SeriesController();
 const user = new UserController();
 const manage = new AdminManagementController();
+const responses = new responsesController();
 
 const access = new AccessValidation();
 const userValidation = new UserValidation();
@@ -80,6 +82,10 @@ router.put(
   contentValidation.editSeriesRequest,
   series.editSeries
 );
+
+router.post('/responses', responses.fetchResponses); // search query, filter data, pagination data
+router.post('/read-message', responses.markAsRead);
+router.get('/response/:id', responses.getMessageById);
 
 router.delete('/content', access.deleteContentAccess, admin.deleteContent); // take only contentId in body
 

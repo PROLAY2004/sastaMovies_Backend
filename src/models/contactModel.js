@@ -22,6 +22,16 @@ const contactSchema = new mongoose.Schema(
       default: false,
     },
 
+    isRead: {
+      type: Boolean,
+      default: false,
+    },
+
+    readBy: {
+      type: String,
+      default: null,
+    },
+
     isDeleted: {
       type: Boolean,
       default: false,
