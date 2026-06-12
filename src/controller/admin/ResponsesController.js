@@ -1,3 +1,5 @@
+import mongoose from 'mongoose';
+
 import contact from '../../models/contactModel.js';
 import user from '../../models/userModel.js';
 import escapeRegex from '../../utils/searchRegex.js';
@@ -107,6 +109,11 @@ export default class ResponsesController {
   getMessageById = async (req, res, next) => {
     try {
       const { id } = req.params;
+
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        res.status(400);
+        throw new Error('Invalid message ID format. Please check the URL.');
+      }
 
       const message = await contact.findById(id);
 

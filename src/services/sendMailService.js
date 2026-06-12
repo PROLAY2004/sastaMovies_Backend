@@ -129,7 +129,13 @@ export default class SendEmailService {
         template.contactTemplate(name, email, message, isSubscribed)
       );
 
-      const admins = await user.find({ isSuperAdmin: true, isDeleted: false }).select('email');
+      const admins = await user
+        .find({
+          isDeleted: false,
+          $or: [{ isSuperAdmin: true }, { role: 'admin' }],
+        })
+        .select('email');
+
       const adminEmails = admins.map((admin) => admin.email);
 
       const mailResponse2 = await this.mailSender(
