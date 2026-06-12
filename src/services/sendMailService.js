@@ -121,7 +121,7 @@ export default class SendEmailService {
     }
   };
 
-  contactMailer = async (name, email, message, isSubscribed) => {
+  contactMailer = async (name, email, message, isSubscribed, msgId) => {
     try {
       const mailResponse1 = await this.mailSender(
         email,
@@ -129,13 +129,19 @@ export default class SendEmailService {
         template.contactTemplate(name, email, message, isSubscribed)
       );
 
-      const admins = await user.find({ isSuperAdmin: true, isDeleted: false }).select('email');
+      const admins = await user
+        .find({
+          isDeleted: false,
+          $or: [{ isSuperAdmin: true }, { role: 'admin' }],
+        })
+        .select('email');
+
       const adminEmails = admins.map((admin) => admin.email);
 
       const mailResponse2 = await this.mailSender(
         adminEmails,
         'New Contact Request',
-        template.adminContactTemplate(name, email, message, isSubscribed)
+        template.adminContactTemplate(name, email, msgId)
       );
 
       if (mailResponse1 instanceof Error) {

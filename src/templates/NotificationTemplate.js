@@ -295,7 +295,7 @@ export default class NotificationTemplate {
     </html>`;
   };
 
-  adminContactTemplate = (name, email, message, newsletterSubscribed) => {
+  adminContactTemplate = (name, email, messageId) => {
     return `<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -350,34 +350,13 @@ export default class NotificationTemplate {
               <b style="color:#fff;">Email:</b>
               ${email}
             </div>
-
-            <div>
-              <b style="color:#fff;">Newsletter:</b>
-              ${newsletterSubscribed ? 'Subscribed' : 'Not Subscribed'}
-            </div>
-
           </div>
-
-          <div style="
-            margin-top:20px;
-            text-align:left;
-            background:#111;
-            border-radius:14px;
-            padding:16px;
-            color:#d1d5db;
-            font-size:14px;
-            line-height:1.7;
-            word-break:break-word;
-          ">
-            ${message}
-          </div>
-
         </div>
 
         <!-- CTA -->
         <div style="text-align:center;">
-          <a href="mailto:${email}" class="btn">
-            Reply to User ✉️
+          <a href="${configuration.ADMIN_URL}/responses/${messageId}" class="btn" style="color : #000"; text-decoration:none; >
+            View Message 📧
           </a>
         </div>
 
