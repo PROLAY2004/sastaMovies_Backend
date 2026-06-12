@@ -362,7 +362,7 @@ export default class UserController {
         isSubscribed,
       });
 
-      mailer.contactMailer(name, email, message, isSubscribed);
+      mailer.contactMailer(name, email, message, isSubscribed, newContact._id);
 
       res.status(200).json({
         message: 'Message sent successfully',
