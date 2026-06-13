@@ -141,7 +141,7 @@ export default class AuthController {
   refresh = async (req, res, next) => {
     try {
       const userInfo = req.user;
-      const tokens = await genAuthToken(userInfo._id);
+      const tokens = await genAuthToken(userInfo._id, 'refresh');
 
       res.status(200).json({
         message: 'Refresh Token successfully generated.',

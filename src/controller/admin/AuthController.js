@@ -147,7 +147,7 @@ export default class AuthController {
         throw new Error('Access Denied. Admin only.');
       }
 
-      const tokens = await genAuthToken(userInfo._id);
+      const tokens = await genAuthToken(userInfo._id, 'refresh');
 
       res.status(200).json({
         message: 'Refresh Token successfully generated.',
