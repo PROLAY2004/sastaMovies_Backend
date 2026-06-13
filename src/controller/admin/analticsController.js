@@ -1,3 +1,5 @@
+import mongoose from 'mongoose';
+
 import user from '../../models/userModel.js';
 import progress from '../../models/progressModel.js';
 
@@ -15,6 +17,11 @@ export default class AnalyticsController {
       if (!userId) {
         res.status(400);
         throw new Error('UserId is required');
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        res.status(400);
+        throw new Error('Invalid message ID format. Please check the URL.');
       }
 
       const userInfo = await user.findById(userId, '-password').lean();
