@@ -203,7 +203,7 @@ export default class UserController {
 
       const watchPercentage =
         duration > 0 ? (lastPosition / duration) * 100 : 0;
-      const isCompleted = watchPercentage >= 95;
+      const isCompleted = watchPercentage >= 93;
 
       // 1. Send response IMMEDIATELY to prevent frontend buffering.
       // (This must be the ONLY response sent)
