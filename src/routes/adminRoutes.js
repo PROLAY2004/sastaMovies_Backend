@@ -7,6 +7,7 @@ import SeriesController from '../controller/admin/SeriesController.js';
 import UserController from '../controller/admin/UserController.js';
 import AdminManagementController from '../controller/admin/AdminManagementController.js';
 import responsesController from '../controller/admin/ResponsesController.js';
+import AnalyticsController from '../controller/admin/analticsController.js';
 
 import UserValidation from '../validations/middleware/UserValidation.js';
 import ContentValidation from '../validations/middleware/ContentValidation.js';
@@ -20,6 +21,7 @@ const series = new SeriesController();
 const user = new UserController();
 const manage = new AdminManagementController();
 const responses = new responsesController();
+const analytics = new AnalyticsController();
 
 const access = new AccessValidation();
 const userValidation = new UserValidation();
@@ -44,6 +46,8 @@ router.delete('/users', access.userAccess, user.deleteUser);
 router.patch('/users', access.userAccess, user.changeStatus);
 router.put('/users', access.userAccess, user.renewUser);
 router.post('/upgrade', access.userAccess, isSuperAdmin, user.makeAdmin);
+
+router.post('/analytics/data', access.userAccess, analytics.getAnalytics); // userId in params
 
 //admin management routes
 router.post('/fetchAdmins', isSuperAdmin, manage.fetchAdmins);
